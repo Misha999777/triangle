@@ -7,7 +7,7 @@
 
 #include "../hardware/AngleSensor.h"
 
-#define STARTING_ANGLE 90.5
+#define STARTING_ANGLE 90.8
 
 class Controller {
 public:

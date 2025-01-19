@@ -4,7 +4,7 @@ if(NOT DEFINED ENV{PICO_SDK_PATH})
     message(FATAL_ERROR "Can't find pico-sdk, path should be specified using PICO_SDK_PATH environment variable.")
 endif()
 
-set(PICO_BOARD pico_w)
+set(PICO_BOARD pico)
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(triangle C CXX ASM)

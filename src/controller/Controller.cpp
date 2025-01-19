@@ -10,7 +10,7 @@
 #define MAXIMUM_VOLTAGE                5
 
 #define K1                             10.0
-#define K2                             0.5
+#define K2                             0.3
 #define K3                             0.1
 
 #define ERROR_MINIMUM_VOLTAGE          10
