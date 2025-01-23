@@ -5,13 +5,10 @@
 #include "Controller.h"
 
 #include <cmath>
-#include <cstdio>
+
+#include "../bluetooth/Communication.h"
 
 #define MAXIMUM_VOLTAGE                5
-
-#define K1                             10.0
-#define K2                             0.3
-#define K3                             0.1
 
 #define ERROR_MINIMUM_VOLTAGE          10
 #define ERROR_MAXIMUM_ANGLE_DIFFERENCE 15
@@ -27,6 +24,11 @@
 float Controller::loop(float shaftVelocity, IMUData data, bool isVertical, float voltage) {
     auto [angle, angularVelocity] = data;
 
+    currentState = "Target angle: " + std::to_string(targetAngle) +
+        ", Current angle: " + std::to_string(angle) +
+        ", Voltage: " + std::to_string(voltage);
+    Communication::setCurrentValue(currentState);
+
     float error = angle - targetAngle;
     if (shouldRun(voltage, error, isVertical)) {
         adjustTargetAngle(shaftVelocity);
@@ -35,6 +37,23 @@ float Controller::loop(float shaftVelocity, IMUData data, bool isVertical, float
     }
 
     return 0;
+}
+
+void Controller::setParameter(int index, float value) {
+    switch (index) {
+        case 1:
+            k1 = value;
+            break;
+        case 2:
+            k2 = value;
+            break;
+        case 3:
+            k3 = value;
+            break;
+        case 4:
+            targetAngle = value;
+            break;
+    }
 }
 
 bool Controller::shouldRun(float voltage, float error, bool isVertical) {
@@ -74,7 +93,7 @@ void Controller::adjustTargetAngle(float shaftVelocity) {
 }
 
 float Controller::controller(float angle, float velocity, float shaftVelocity) {
-    float u = K1 * angle + K2 * velocity + K3 * shaftVelocity;
+    float u = k1 * angle + k2 * velocity + k3 * shaftVelocity;
     u = max(-MAXIMUM_VOLTAGE, min(u, MAXIMUM_VOLTAGE));
     return u;
 }
