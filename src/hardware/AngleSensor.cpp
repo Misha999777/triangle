@@ -14,7 +14,7 @@
 #define PINS_I2C_SDA               26
 #define PINS_I2C_SCL               27
 
-#define I2C_SPEED                  500000
+#define I2C_SPEED                  400000
 
 #define RADIANS_TO_DEGREES         180.0 / M_PI
 #define MILLIS_IN_SECOND           1000.0

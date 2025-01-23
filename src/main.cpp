@@ -1,6 +1,9 @@
+//
+// Created by Михайло Грошевий on 18/01/2025.
+//
+
 #include <cmath>
 
-#include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include <pico/flash.h>
 
@@ -10,6 +13,7 @@
 #include "hardware/AngleSensor.h"
 
 #include "controller/Controller.h"
+#include "bluetooth/Communication.h"
 
 #define LOOP_TIME 10
 
@@ -35,6 +39,11 @@ Motor* motor;
     Controller* controller = new Controller();
     MotorSensor* motorSensor = new MotorSensor();
     motor = new Motor(motorSensor);
+
+    Communication::init();
+    Communication::setCallback([controller](int a, float b) {
+        controller->setParameter(a, b);
+    });
 
     while (true) {
         IMUData data = angleSensor->readData();
