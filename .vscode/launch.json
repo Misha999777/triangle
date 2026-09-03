@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Download and Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "${command:cmake.launchTargetPath}",
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:PICO_TOOLCHAIN_PATH}/bin/arm-none-eabi-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "debugServerPath": "openocd",
+            "debugServerArgs": "-f ${workspaceFolder}/openocd_pico.cfg",
+            "serverStarted": "Info : Listening on port 3333 for gdb connections",
+            "filterStderr": true,
+            "postRemoteConnectCommands": [
+                { "text": "monitor reset init" },
+                { "text": "load" },
+                { "text": "monitor reset halt" }
+            ]
+        }
+    ]
+}

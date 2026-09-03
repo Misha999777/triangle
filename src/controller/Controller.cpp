@@ -21,16 +21,15 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-float Controller::loop(float shaftVelocity, IMUData data, bool isVertical, float voltage) {
+float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
     auto [angle, angularVelocity] = data;
 
     currentState = "Target angle: " + std::to_string(targetAngle) +
-        ", Current angle: " + std::to_string(angle) +
-        ", Voltage: " + std::to_string(voltage);
+        ", Current angle: " + std::to_string(angle);
     Communication::setCurrentValue(currentState);
 
     float error = angle - targetAngle;
-    if (shouldRun(voltage, error, isVertical)) {
+    if (shouldRun(error, isVertical)) {
         adjustTargetAngle(shaftVelocity);
 
         return controller(error, angularVelocity, shaftVelocity);
@@ -56,13 +55,9 @@ void Controller::setParameter(int index, float value) {
     }
 }
 
-bool Controller::shouldRun(float voltage, float error, bool isVertical) {
-    if (voltage < ERROR_MINIMUM_VOLTAGE) {
-        wasBatteryDrained = true;
-    }
-
+bool Controller::shouldRun(float error, bool isVertical) {
     bool isErrorSmallEnough = std::abs(error) < ERROR_MAXIMUM_ANGLE_DIFFERENCE;
-    bool isFreeToRun = !wasBatteryDrained && isVertical && isErrorSmallEnough;
+    bool isFreeToRun = isVertical && isErrorSmallEnough;
 
     if (isFreeToRun) {
         errorCounter++;
