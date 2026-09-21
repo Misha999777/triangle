@@ -6,7 +6,9 @@
 
 #include <cmath>
 
+#include <hardware/gpio.h>
 #include "hardware/spi.h"
+#include <pico/time.h>
 
 #define PIN_CS    5
 #define PIN_MISO  4
@@ -53,7 +55,7 @@ float MotorSensor::readAngle() {
     gpio_put(PIN_CS, true);
 
     uint16_t data = rx_buf[0] << 8 | rx_buf[1];
-    uint16_t data_mask = 0xFFFF >> 16 - SENSOR_RESOLUTION;
+    uint16_t data_mask = 0xFFFF >> (16 - SENSOR_RESOLUTION);
 
     uint16_t masked = data & data_mask;
     return (float) masked / SENSOR_MAX_VALUE * _2PI;
@@ -63,7 +65,7 @@ float MotorSensor::getAngle() {
     angle_prev_ts = time_us_64();
     float angle = readAngle();
     float d_angle = angle - angle_prev;
-    if(abs(d_angle) > 0.8f * _2PI) {
+    if(std::abs(d_angle) > 0.8f * _2PI) {
         full_rotations += d_angle > 0 ? -1 : 1;
     }
     angle_prev = angle;

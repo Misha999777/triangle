@@ -5,6 +5,7 @@
 #include "Driver.h"
 
 #include <hardware/clocks.h>
+#include <hardware/gpio.h>
 #include <hardware/pwm.h>
 
 #define PINS_PWM_1    10
@@ -15,7 +16,7 @@
 #define PWM_DIVIDER   16
 
 Driver::Driver() {
-    params = new RP2040DriverParams();
+    params = new RP2350DriverParams();
 
     setupPWM(PINS_PWM_1, 0);
     setupPWM(PINS_PWM_2, 1);

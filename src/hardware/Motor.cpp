@@ -7,6 +7,9 @@
 #include <cstdio>
 #include <cmath>
 
+#include <hardware/gpio.h>
+#include <pico/time.h>
+
 #include "../controller/Storage.h"
 
 #define PINS_EN  13

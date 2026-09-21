@@ -5,7 +5,7 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-#include "pico/stdlib.h"
+#include <pico/types.h>
 
 class MotorSensor {
 public:
