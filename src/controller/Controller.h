@@ -9,25 +9,24 @@
 
 #include "../hardware/AngleSensor.h"
 
-#define STARTING_ANGLE 90.5
+#define STARTING_ANGLE 93.5
 #define K1             10.0
 #define K2             0.3
 #define K3             0.1
 
 class Controller {
 public:
-  float loop(float shaftVelocity, IMUData data, bool isVertical, float voltage);
+  float loop(float shaftVelocity, IMUData data, bool isVertical);
   void setParameter(int index, float value);
 
 private:
-  bool shouldRun(float voltage, float error, bool isVertical);
+  bool shouldRun(float error, bool isVertical);
   float controller(float angle, float velocity, float shaftVelocity);
   void adjustTargetAngle(float shaftVelocity);
 
   float averageVelocity = 0.0;
   int averageVelocityCounter = 0;
 
-  bool wasBatteryDrained = false;
   int errorCounter = 0;
 
   float targetAngle = STARTING_ANGLE;

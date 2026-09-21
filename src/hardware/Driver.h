@@ -7,11 +7,11 @@
 
 #include "pico/stdlib.h"
 
-typedef struct RP2040DriverParams {
+typedef struct RP2350DriverParams {
     uint slice[3];
     uint chan[3];
     uint wrap[3];
-} RP2040DriverParams;
+} RP2350DriverParams;
 
 class Driver {
 public:
@@ -22,7 +22,7 @@ private:
     void setupPWM(uint pin, uint8_t index);
     void writeDutyCycle(float val, uint slice, uint chan, uint wrap);
 
-    RP2040DriverParams* params;
+    RP2350DriverParams* params;
 };
 
 #endif //PWM_H
