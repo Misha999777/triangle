@@ -15,7 +15,7 @@
 #define PWM_DIVIDER   16
 
 Driver::Driver() {
-    params = new RP2040DriverParams();
+    params = new RP2350DriverParams();
 
     setupPWM(PINS_PWM_1, 0);
     setupPWM(PINS_PWM_2, 1);
