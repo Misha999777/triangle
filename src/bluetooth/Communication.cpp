@@ -9,7 +9,7 @@
 
 constexpr uint8_t advData[] = {
     0x02, 0x01, 0x06, // Length: 2 bytes, type: Bluetooth Data Type Flags (0x01), value: LE General Discoverable Mode + BR/EDR Not Supported (0x02 + 0x04)
-    0x07, 0x09, 'P', 'i', 'c', 'o', ' ', 'W', // Length: 7 bytes, type: Complete Local Name (0x09), value: Pico W
+    0x09, 0x09, 'P', 'i', 'c', 'o', ' ', '2', ' ', 'W', // Length: 9 bytes, type: Complete Local Name (0x09), value: Pico 2 W
     0x11, 0x07, // Length: 17 bytes, type: Complete List Of 128 Bit Service Class UUIDs (0x07)
     0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x10, 0xff, 0x00, 0x00  // value: 0000FF10-0000-1000-8000-00805F9B34FB
 };

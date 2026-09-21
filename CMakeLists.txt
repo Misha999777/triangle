@@ -4,7 +4,7 @@ if(NOT DEFINED ENV{PICO_SDK_PATH})
     message(FATAL_ERROR "Can't find pico-sdk, path should be specified using PICO_SDK_PATH environment variable.")
 endif()
 
-set(PICO_BOARD pico_w)
+set(PICO_BOARD pico2_w)
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(triangle C CXX ASM)
@@ -15,7 +15,6 @@ add_executable(triangle
         src/hardware/MotorSensor.cpp
         src/hardware/Motor.cpp
         src/hardware/AngleSensor.cpp
-        src/hardware/Battery.cpp
         src/controller/Storage.cpp
         src/controller/Controller.cpp
         src/bluetooth/Communication.cpp
