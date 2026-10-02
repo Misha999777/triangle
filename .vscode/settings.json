@@ -2,6 +2,6 @@
     "cmake.generator": "Ninja",
     "C_Cpp.intelliSenseEngine": "disabled",
     "clangd.arguments": [
-        "--query-driver=**/*arm-none-eabi-*,**\\ARM-GN~1\\**"
+        "--query-driver=**arm-none-eabi-*"
     ]
 }

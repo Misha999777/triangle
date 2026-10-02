@@ -56,15 +56,17 @@ This project uses the **Raspberry Pi Pico SDK** and **CMake**.
 
 1.  **Install Prerequisites**:
     -   CMake
-    -   Arm Toolchain (`arm-none-eabi-gcc`)
+    -   Ninja
+    -   Arm Toolchain (`arm-none-eabi`) (Set `PICO_TOOLCHAIN_PATH` environment variable)
     -   Raspberry Pi Pico SDK (Set `PICO_SDK_PATH` environment variable)
+    -   clangd, openocd, pioasm, and picotool in path
 
 2.  **Build**:
     ```bash
     mkdir build
     cd build
     cmake ..
-    make
+    ninja
     ```
 
 3.  **Flash**:
@@ -72,12 +74,10 @@ This project uses the **Raspberry Pi Pico SDK** and **CMake**.
     -   Copy the generated `triangle.uf2` file to the mounted RPI-RP2 drive.
 
 ## Debugging
-The project includes an `openocd_pico.cfg` configuration file for debugging with **OpenOCD** and **GDB** via the **SWD** interface.
-It is configured for **CMSIS-DAP** adapters (e.g., Raspberry Pi Debug Probe or another Pico running `picoprobe`).
 
-To start an OpenOCD session:
+First start an OpenOCD session:
 ```bash
-openocd -f openocd_pico.cfg
+openocd -f interface/cmsis-dap.cfg -f target/rp2350.cfg
 ```
 
 You can then connect with GDB:
@@ -87,16 +87,20 @@ arm-none-eabi-gdb build/triangle.elf
 ```
 
 ## Bluetooth Interface
-BLE service is exposed for real-time tuning. You can use a generic BLE Scanner to connect.
+BLE service is exposed for real-time telemetry and tuning.
 
 ### Telemetry
--   **Status String**: Contains Target Angle and Current Angle.
+-   Reports Target Angle and Current Angle.
 
-### Writable Parameters (Float)
--   **Index 1**: `k1` (Angle Gain)
--   **Index 2**: `k2` (Angular Velocity Gain)
--   **Index 3**: `k3` (Motor Speed Gain)
--   **Index 4**: `targetAngle` (Manual offset for balance point)
+### Parameters
+-   `k1`: Angle Gain
+-   `k2`: Angular Velocity GainAdd tuning app
+-   `k3`: Motor Speed Gain
+-   `targetAngle`: Manual offset for balance point
+
+### App
+There is a Web Bluetooth dashboard app available at:
+https://misha999777.github.io/triangle
 
 ## License
 See `LICENSE` file.
