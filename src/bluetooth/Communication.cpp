@@ -4,6 +4,9 @@
 
 #include "Communication.h"
 
+#include <cstdio>
+#include <cstring>
+
 #include <pico/cyw43_arch.h>
 #include "ble_config.h"
 
@@ -19,7 +22,7 @@ void Communication::init() {
     l2cap_init();
     sm_init();
 
-    att_server_init(profile_data, attReadCallback, attWriteCallback);
+    att_server_init(profile_data, nullptr, attWriteCallback);
 
     gap_advertisements_set_params(0x0030, 0x0030, 0, 0, {}, 0x07, 0x00);
     gap_advertisements_set_data(sizeof(advData), (uint8_t*) advData);
@@ -28,31 +31,16 @@ void Communication::init() {
     hci_power_control(HCI_POWER_ON);
 }
 
-void Communication::setCallback(const std::function<void(int, float)> &newCallback) {
+void Communication::setCallback(const std::function<int(const char*)> &newCallback) {
     callback = newCallback;
 }
 
-void Communication::setCurrentValue(const std::string& newValue) {
-    currentValue = newValue;
-}
-
-void Communication::sendNotification(const std::string& value) {
+void Communication::sendNotification(const char* value) {
     if (notificationHandle == 0) {
         return;
     }
     att_server_notify(notificationHandle, ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE,
-        (uint8_t*) value.c_str(), sizeof(value));
-}
-
-uint16_t Communication::attReadCallback(hci_con_handle_t connectionHandle, uint16_t attHandle,
-                                        uint16_t offset, uint8_t* buffer, uint16_t bufferSize) {
-    UNUSED(connectionHandle);
-
-    if (attHandle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE) {
-        return att_read_callback_handle_blob((const uint8_t*) currentValue.c_str(), currentValue.size(),
-            offset, buffer, bufferSize);
-    }
-    return 0;
+        (uint8_t*) value, strlen(value));
 }
 
 int Communication::attWriteCallback(hci_con_handle_t connectionHandle, uint16_t attHandle, uint16_t transactionMode,
@@ -69,13 +57,12 @@ int Communication::attWriteCallback(hci_con_handle_t connectionHandle, uint16_t 
     }
 
     if (attHandle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE) {
-        std::string receivedString((char*) buffer, bufferSize);
+        char charBuffer[32];
+        size_t len = bufferSize < sizeof(charBuffer) - 1 ? bufferSize : sizeof(charBuffer) - 1;
+        memcpy(charBuffer, buffer, len);
+        charBuffer[len] = '\0';
 
-        size_t colonPos = receivedString.find(':');
-        int integerPart = std::stoi(receivedString.substr(0, colonPos));
-        float floatPart = std::stof(receivedString.substr(colonPos + 1));
-
-        callback(integerPart, floatPart);
+        return callback(charBuffer);
     }
     return 0;
 }

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cmath>
 
+#include <hardware/gpio.h>
 #include "hardware/i2c.h"
 
 #include "../controller/Storage.h"

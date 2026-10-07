@@ -5,7 +5,6 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
-#include <string>
 #include <functional>
 
 #include <btstack.h>
@@ -13,17 +12,14 @@
 class Communication {
 public:
     static void init();
-    static void setCallback(const std::function<void(int, float)> &newCallback);
-    static void setCurrentValue(const std::string& newValue);
-    static void sendNotification(const std::string& value);
+    static void setCallback(const std::function<int(const char*)> &newCallback);
+    static void sendNotification(const char* value);
 
 private:
-    static uint16_t attReadCallback(hci_con_handle_t, uint16_t, uint16_t, uint8_t*, uint16_t);
     static int attWriteCallback(hci_con_handle_t, uint16_t, uint16_t, uint16_t, uint8_t*, uint16_t);
 
     static inline hci_con_handle_t notificationHandle;
-    static inline std::function<void(int, float)> callback;
-    static inline std::string currentValue;
+    static inline std::function<int(const char*)> callback;
 };
 
 #endif //COMMUNICATION_H

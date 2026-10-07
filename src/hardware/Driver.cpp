@@ -5,6 +5,7 @@
 #include "Driver.h"
 
 #include <hardware/clocks.h>
+#include <hardware/gpio.h>
 #include <hardware/pwm.h>
 
 #define PINS_PWM_1    10

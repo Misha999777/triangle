@@ -2,10 +2,9 @@
 // Created by Михайло Грошевий on 18/01/2025.
 //
 
-#include <cmath>
-
 #include "pico/multicore.h"
 #include <pico/flash.h>
+#include <pico/stdio.h>
 
 #include "hardware/MotorSensor.h"
 #include "hardware/Motor.h"
@@ -39,8 +38,8 @@ Motor* volatile motor = nullptr;
     motor = new Motor(motorSensor);
 
     Communication::init();
-    Communication::setCallback([controller](int a, float b) {
-        controller->setParameter(a, b);
+    Communication::setCallback([controller](const char* command) {
+        return controller->handleCommand(command);
     });
 
     while (true) {

@@ -5,7 +5,7 @@
 #ifndef IMU_H
 #define IMU_H
 
-#include "pico/stdlib.h"
+#include <pico/types.h>
 
 struct IMUData {
     float angle;

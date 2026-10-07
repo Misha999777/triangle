@@ -4,13 +4,10 @@
 
 #include "Storage.h"
 
-#include <cstdio>
 #include <cstring>
 
-#include "pico/stdlib.h"
-#include "pico/flash.h"
-
 #include "hardware/flash.h"
+#include "pico/flash.h"
 
 #define FLASH_TARGET_OFFSET (1024 * 1024)
 const uint8_t* flash_target_contents = (const uint8_t*) (XIP_BASE + FLASH_TARGET_OFFSET);

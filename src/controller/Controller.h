@@ -5,8 +5,6 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include <string>
-
 #include "../hardware/AngleSensor.h"
 
 #define STARTING_ANGLE 93.5
@@ -16,10 +14,12 @@
 
 class Controller {
 public:
+  Controller();
   float loop(float shaftVelocity, IMUData data, bool isVertical);
-  void setParameter(int index, float value);
+  int handleCommand(const char* command);
 
 private:
+  bool isRunning = false;
   bool shouldRun(float error, bool isVertical);
   float controller(float angle, float velocity, float shaftVelocity);
   void adjustTargetAngle(float shaftVelocity);
@@ -34,7 +34,7 @@ private:
   float k2 = K2;
   float k3 = K3;
 
-  std::string currentState;
+  int notificationCounter = 0;
 };
 
 #endif //CONTROLLER_H

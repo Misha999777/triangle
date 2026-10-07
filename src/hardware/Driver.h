@@ -5,7 +5,7 @@
 #ifndef PWM_H
 #define PWM_H
 
-#include "pico/stdlib.h"
+#include <pico/types.h>
 
 typedef struct RP2350DriverParams {
     uint slice[3];
