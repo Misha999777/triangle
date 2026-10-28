@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="icon.svg"/>
+    <link rel="manifest" href="manifest.json">
+    <title>Triangle</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script>
+        const updateTheme = () => {
+            document.documentElement.setAttribute('data-bs-theme',
+                window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        };
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+        updateTheme();
+    </script>
+</head>
+<body class="bg-body-tertiary py-4">
+    <div class="container" style="max-width: 500px;">
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body">
+                <h5 class="card-title border-bottom pb-2 mb-3">Connection</h5>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <button id="connectBtn" class="btn btn-primary px-4 fw-semibold">Connect</button>
+                    <span id="status" class="badge bg-info fs-6">Disconnected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body">
+                <h5 class="card-title border-bottom pb-2 mb-3">Telemetry</h5>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-semibold">Target Angle:</span>
+                    <span id="targetAngle" class="badge bg-info fs-6" style="min-width: 60px;">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Current Angle:</span>
+                    <span id="currentAngle" class="badge bg-info fs-6" style="min-width: 60px;">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title border-bottom pb-2 mb-3">Parameters</h5>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold mb-1">k1</label>
+                    <div class="input-group">
+                        <input id="k1" type="number" step="0.1" value="10.0" class="form-control" placeholder="10.0">
+                        <button class="btn btn-primary updateBtn" data-input="k1">Update</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold mb-1">k2</label>
+                    <div class="input-group">
+                        <input id="k2" type="number" step="0.1" value="0.3" class="form-control" placeholder="0.3">
+                        <button class="btn btn-primary updateBtn" data-input="k2">Update</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold mb-1">k3</label>
+                    <div class="input-group">
+                        <input id="k3" type="number" step="0.1" value="0.1" class="form-control" placeholder="0.1">
+                        <button class="btn btn-primary updateBtn" data-input="k3">Update</button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-muted mb-1">Target Angle</label>
+                    <div class="input-group">
+                        <input id="angle" type="number" step="0.1" value="93.5" class="form-control" placeholder="93.5">
+                        <button class="btn btn-primary updateBtn" data-input="angle">Update</button>
+                    </div>
+                </div>
+
+                <button id="saveBtn" class="btn btn-primary w-100 fw-semibold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

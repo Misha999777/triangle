@@ -14,3 +14,11 @@ These parameters allow you to tune the state-feedback controller `u = k1*angle +
 *   **Index 2**: `k2` (Angular Velocity Gain) - Adds damping to prevent oscillation.
 *   **Index 3**: `k3` (Motor Speed Gain) - Prevents the motor from reaching its maximum speed limit by leaning slightly in the direction of travel.
 *   **Index 4**: `targetAngle` - Manual offset for the balance point. Use this to compensate for any physical imbalance in the chassis.
+
+## Web App
+
+You can use the Triangle Web App to monitor telemetry and tune these parameters in your browser.
+
+**Note:** requires a browser with Web Bluetooth support.
+
+<a href="https://misha999777.github.io/triangle/app" target="_blank">Open in a New Tab</a>

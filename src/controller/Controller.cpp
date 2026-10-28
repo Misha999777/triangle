@@ -12,7 +12,6 @@
 
 #define MAXIMUM_VOLTAGE                5
 
-#define ERROR_MINIMUM_VOLTAGE          10
 #define ERROR_MAXIMUM_ANGLE_DIFFERENCE 15
 #define ERROR_RELEASE_TIMEOUT          50
 
@@ -43,7 +42,7 @@ float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
     auto [angle, angularVelocity] = data;
 
     if (notificationCounter++ >= NOTIFICATION_TIMEOUT) {
-        char buffer[21];
+        char buffer[32];
         snprintf(buffer, sizeof(buffer), "T:%.2f C:%.2f", targetAngle, angle);
         Communication::sendNotification(buffer);
         notificationCounter = 0;
