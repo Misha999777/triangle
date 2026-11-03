@@ -1,0 +1,18 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Download (BOOTSEL)",
+            "type": "process",
+            "group": "build",
+            "command": "picotool",
+            "args": [
+                "load",
+                "-f",
+                "-x",
+                "${command:cmake.launchTargetPath}"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

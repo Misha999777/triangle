@@ -7,7 +7,7 @@
 
 #include "../hardware/AngleSensor.h"
 
-#define STARTING_ANGLE 93.5
+#define STARTING_ANGLE 93.0
 #define K1             10.0
 #define K2             0.3
 #define K3             0.1
