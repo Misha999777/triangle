@@ -58,7 +58,8 @@ int Communication::attWriteCallback(hci_con_handle_t connectionHandle, uint16_t 
 
     if (attHandle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE) {
         char charBuffer[32];
-        size_t len = bufferSize < sizeof(charBuffer) - 1 ? bufferSize : sizeof(charBuffer) - 1;
+        int maxLen = sizeof(charBuffer) - 1;
+        int len = bufferSize < maxLen ? bufferSize : maxLen;
         memcpy(charBuffer, buffer, len);
         charBuffer[len] = '\0';
 

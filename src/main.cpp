@@ -5,6 +5,7 @@
 #include "pico/multicore.h"
 #include <pico/flash.h>
 #include <pico/stdio.h>
+#include <pico/time.h>
 
 #include "hardware/MotorSensor.h"
 #include "hardware/Motor.h"
@@ -42,7 +43,10 @@ Motor* volatile motor = nullptr;
         return controller->handleCommand(command);
     });
 
+    absolute_time_t nextLoop = get_absolute_time();
     while (true) {
+        nextLoop = delayed_by_ms(nextLoop, LOOP_TIME);
+
         IMUData data = angleSensor->readData();
         float shaftVelocity = motorSensor->getVelocity();
         bool isVertical = angleSensor->isVertical();
@@ -50,6 +54,10 @@ Motor* volatile motor = nullptr;
         float torque = controller->loop(shaftVelocity, data, isVertical);
         motor->setTorque(torque);
 
-        sleep_ms(LOOP_TIME);
+        if (absolute_time_diff_us(get_absolute_time(), nextLoop) <= 0) {
+            nextLoop = get_absolute_time();
+        } else {
+            sleep_until(nextLoop);
+        }
     }
 }

@@ -2,8 +2,7 @@
 // Created by Михайло Грошевий on 21/01/2025.
 //
 
-#ifndef COMMUNICATION_H
-#define COMMUNICATION_H
+#pragma once
 
 #include <functional>
 
@@ -21,5 +20,3 @@ private:
     static inline hci_con_handle_t notificationHandle;
     static inline std::function<int(const char*)> callback;
 };
-
-#endif //COMMUNICATION_H

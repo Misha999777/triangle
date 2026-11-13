@@ -79,13 +79,13 @@ void Motor::calibrate() {
 float Motor::electricalAngle() {
     float angle = motorSensor->getAngle();
     float electricalAngle = sensor_direction * 11 * angle - zero_electric_angle;
-    float a = fmod(electricalAngle, _2PI);
+    float a = std::fmod(electricalAngle, _2PI);
     return a >= 0 ? a : a + _2PI;
 }
 
 void Motor::setPhaseVoltage(float Uq, float angle_el) {
-    float sa = sin(angle_el);
-    float ca = cos(angle_el);
+    float sa = std::sin(angle_el);
+    float ca = std::cos(angle_el);
 
     // Inverse Park transform
     float alpha = - sa * Uq;

@@ -39,4 +39,5 @@ target_compile_definitions(triangle PRIVATE
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src/bluetooth/config")
 pico_btstack_make_gatt_header(triangle PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src/bluetooth/config/ble_config.gatt")
 
+pico_enable_stdio_usb(triangle 1)
 pico_add_extra_outputs(triangle)

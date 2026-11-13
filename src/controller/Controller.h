@@ -2,15 +2,14 @@
 // Created by Михайло Грошевий on 18/01/2025.
 //
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#pragma once
 
 #include "../hardware/AngleSensor.h"
 
-#define STARTING_ANGLE 93.5
-#define K1             10.0
-#define K2             0.3
-#define K3             0.1
+#define STARTING_ANGLE 92.5f
+#define K1             10.0f
+#define K2             0.3f
+#define K3             0.1f
 
 class Controller {
 public:
@@ -24,7 +23,7 @@ private:
   float controller(float angle, float velocity, float shaftVelocity);
   void adjustTargetAngle(float shaftVelocity);
 
-  float averageVelocity = 0.0;
+  float averageVelocity = 0;
   int averageVelocityCounter = 0;
 
   int errorCounter = 0;
@@ -36,5 +35,3 @@ private:
 
   int notificationCounter = 0;
 };
-
-#endif //CONTROLLER_H
