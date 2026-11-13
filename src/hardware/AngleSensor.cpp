@@ -17,8 +17,8 @@
 
 #define I2C_SPEED                  400000
 
-#define RADIANS_TO_DEGREES         180.0 / M_PI
-#define MILLIS_IN_SECOND           1000.0
+#define RADIANS_TO_DEGREES         (180.0f / (float) M_PI)
+#define MILLIS_IN_SECOND           1000.0f
 
 #define MPU6050                    0x68
 #define PWR_MGMT                   0x6B
@@ -26,9 +26,9 @@
 #define GYRO_DATA                  0x47
 
 #define CALIBRATION_SAMPLES        512
-#define GYRO_DIVIDER               131.0
-#define GYRO_WEIGHT                0.98
-#define ACCEL_FILTER_VALUE         0.1
+#define GYRO_DIVIDER               131.0f
+#define GYRO_WEIGHT                0.98f
+#define ACCEL_FILTER_VALUE         0.1f
 #define VERTICAL_THRESHOLD         10000
 
 AngleSensor::AngleSensor() {
@@ -45,7 +45,7 @@ AngleSensor::AngleSensor() {
     calibrateGyro();
 
     readAccel();
-    data.angle = atan2(accelY, -accelX) * RADIANS_TO_DEGREES;
+    data.angle = std::atan2((float) accelY, (float) -accelX) * RADIANS_TO_DEGREES;
     previousTime = to_ms_since_boot(get_absolute_time());
 }
 
@@ -53,21 +53,21 @@ IMUData AngleSensor::readData() {
     readAccel();
     readGyro();
 
-    uint32_t currentTime = to_ms_since_boot(get_absolute_time());
-    uint32_t elapsedTime = currentTime - previousTime;
+    int currentTime = to_ms_since_boot(get_absolute_time());
+    int elapsedTime = currentTime - previousTime;
     previousTime = currentTime;
 
-    float accelAngle = atan2(accelY, -accelX) * RADIANS_TO_DEGREES;
+    float accelAngle = std::atan2((float) accelY, (float) -accelX) * RADIANS_TO_DEGREES;
     float gyroAngle = data.angle + gyroZ * (elapsedTime / MILLIS_IN_SECOND);
 
     data.angularVelocity = gyroZ;
-    data.angle = gyroAngle * GYRO_WEIGHT + accelAngle * (1.0 - GYRO_WEIGHT);
+    data.angle = gyroAngle * GYRO_WEIGHT + accelAngle * (1.0f - GYRO_WEIGHT);
 
     return data;
 }
 
 bool AngleSensor::isVertical() {
-    return abs(accelZ) < VERTICAL_THRESHOLD;
+    return std::abs(accelZ) < VERTICAL_THRESHOLD;
 }
 
 void AngleSensor::calibrateGyro() {
@@ -98,7 +98,7 @@ void AngleSensor::readAccel() {
     accelX = (int16_t)((buffer[0] << 8) | buffer[1]);
     accelY = (int16_t)((buffer[2] << 8) | buffer[3]);
 
-    int16_t newAccelZ = (int16_t)(buffer[4] << 8 | buffer[5]);
+    int newAccelZ = (int16_t)((buffer[4] << 8) | buffer[5]);
     accelZ = newAccelZ * ACCEL_FILTER_VALUE + accelZ * (1 - ACCEL_FILTER_VALUE);
 }
 
@@ -106,12 +106,12 @@ void AngleSensor::readGyro() {
     uint8_t buffer[2];
     readFrom(GYRO_DATA, buffer, 2);
 
-    gyroZ = (int16_t)(buffer[0] << 8 | buffer[1]);
-    gyroZ /= GYRO_DIVIDER;
-    gyroZ -= gyroOffset;
+    int rawGyroZ = (int16_t)((buffer[0] << 8) | buffer[1]);
+    gyroZ = rawGyroZ / GYRO_DIVIDER - gyroOffset;
 }
 
-void AngleSensor::readFrom(uint8_t address, uint8_t *buffer, size_t length) {
-    i2c_write_blocking(i2c1, MPU6050, &address, 1, true);
+void AngleSensor::readFrom(int address, uint8_t *buffer, int length) {
+    uint8_t reg = address;
+    i2c_write_blocking(i2c1, MPU6050, &reg, 1, true);
     i2c_read_blocking(i2c1, MPU6050, buffer, length, false);
 }

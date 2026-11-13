@@ -2,8 +2,7 @@
 // Created by Михайло Грошевий on 18/01/2025.
 //
 
-#ifndef MOTOR_H
-#define MOTOR_H
+#pragma once
 
 #include "MotorSensor.h"
 #include "Driver.h"
@@ -26,5 +25,3 @@ private:
     int sensor_direction = 1;
     float torque = 0;
 };
-
-#endif //MOTOR_H

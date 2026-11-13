@@ -15,9 +15,9 @@
 #define ERROR_MAXIMUM_ANGLE_DIFFERENCE 15
 #define ERROR_RELEASE_TIMEOUT          50
 
-#define ANGLE_ADJUSTMENT_TIMEOUT       1000
+#define ANGLE_ADJUSTMENT_TIMEOUT       500
 #define ANGLE_ADJUSTMENT_THRESHOLD     5
-#define ANGLE_ADJUSTMENT_STEP          0.05
+#define ANGLE_ADJUSTMENT_STEP          0.025f
 
 #define NOTIFICATION_TIMEOUT           50
 
@@ -113,7 +113,7 @@ void Controller::adjustTargetAngle(float shaftVelocity) {
         targetAngle += ANGLE_ADJUSTMENT_STEP;
     }
 
-    averageVelocity = 0.0;
+    averageVelocity = 0;
     averageVelocityCounter = 0;
 }
 

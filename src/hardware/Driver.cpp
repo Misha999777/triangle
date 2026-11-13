@@ -22,7 +22,7 @@ Driver::Driver() {
     setupPWM(PINS_PWM_2, 1);
     setupPWM(PINS_PWM_3, 2);
 
-    for (uint i = 0; i < NUM_PWM_SLICES; i++) {
+    for (int i = 0; i < NUM_PWM_SLICES; i++) {
         pwm_set_enabled(i, false);
         pwm_set_counter(i, 0);
     }
@@ -36,15 +36,15 @@ void Driver::writeDutyCycle(float dc_a, float dc_b, float dc_c) {
     writeDutyCycle(dc_c, params->slice[2], params->chan[2], params->wrap[2] + 1);
 }
 
-void Driver::setupPWM(uint pin, uint8_t index) {
-    uint32_t div = PWM_DIVIDER;
-    uint32_t sysclock_hz = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS) * 1000;
-    uint32_t wrap = sysclock_hz * 8 / div / PWM_FREQUENCY - 1;
+void Driver::setupPWM(int pin, int index) {
+    int div = PWM_DIVIDER;
+    int sysclock_hz = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS) * 1000;
+    int wrap = sysclock_hz / div * 8 / PWM_FREQUENCY - 1;
 
     gpio_set_function(pin, GPIO_FUNC_PWM);
 
-    uint slice = pwm_gpio_to_slice_num(pin);
-    uint chan = pwm_gpio_to_channel(pin);
+    int slice = pwm_gpio_to_slice_num(pin);
+    int chan = pwm_gpio_to_channel(pin);
 
     pwm_set_clkdiv_int_frac(slice, div>>4, div&0xF);
     pwm_set_phase_correct(slice, true);
@@ -56,6 +56,6 @@ void Driver::setupPWM(uint pin, uint8_t index) {
     params->chan[index] = chan;
 }
 
-void Driver::writeDutyCycle(float val, uint slice, uint chan, uint wrap) {
+void Driver::writeDutyCycle(float val, int slice, int chan, int wrap) {
     pwm_set_chan_level(slice, chan, wrap * val);
 }

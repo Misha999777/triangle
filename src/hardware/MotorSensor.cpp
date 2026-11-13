@@ -25,6 +25,8 @@
 #define _2PI 6.28318530718f
 
 MotorSensor::MotorSensor() {
+    critical_section_init(&lock);
+
     spi_init(SPI_PORT, SPI_SPEED);
     spi_set_format(SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_1, SPI_MSB_FIRST);
 
@@ -54,33 +56,46 @@ float MotorSensor::readAngle() {
     spi_read_blocking(SPI_PORT, 0, rx_buf, 2);
     gpio_put(PIN_CS, true);
 
-    uint16_t data = rx_buf[0] << 8 | rx_buf[1];
-    uint16_t data_mask = 0xFFFF >> (16 - SENSOR_RESOLUTION);
+    int data = rx_buf[0] << 8 | rx_buf[1];
+    int data_mask = 0xFFFF >> (16 - SENSOR_RESOLUTION);
 
-    uint16_t masked = data & data_mask;
+    int masked = data & data_mask;
     return (float) masked / SENSOR_MAX_VALUE * _2PI;
 }
 
 float MotorSensor::getAngle() {
-    angle_prev_ts = time_us_64();
+    uint64_t ts = time_us_64();
     float angle = readAngle();
+
+    critical_section_enter_blocking(&lock);
     float d_angle = angle - angle_prev;
-    if(std::abs(d_angle) > 0.8f * _2PI) {
+    if (std::abs(d_angle) > 0.8f * _2PI) {
         full_rotations += d_angle > 0 ? -1 : 1;
     }
     angle_prev = angle;
+    angle_prev_ts = ts;
+    critical_section_exit(&lock);
 
     return angle;
 }
 
 float MotorSensor::getVelocity() {
-    float Ts = (angle_prev_ts - vel_angle_prev_ts) * 1e-6f;
+    critical_section_enter_blocking(&lock);
+    uint64_t ts = angle_prev_ts;
+    float angle = angle_prev;
+    int rotations = full_rotations;
+    critical_section_exit(&lock);
 
-    float velocity = ( (full_rotations - vel_full_rotations) * _2PI + (angle_prev - vel_angle_prev) ) / Ts;
+    if (ts == vel_angle_prev_ts) {
+        return velocity;
+    }
 
-    vel_angle_prev = angle_prev;
-    vel_angle_prev_ts = angle_prev_ts;
-    vel_full_rotations = full_rotations;
+    float Ts = (ts - vel_angle_prev_ts) * 1e-6f;
+    velocity = ((rotations - vel_full_rotations) * _2PI + (angle - vel_angle_prev)) / Ts;
+
+    vel_angle_prev = angle;
+    vel_angle_prev_ts = ts;
+    vel_full_rotations = rotations;
 
     return velocity;
 }
