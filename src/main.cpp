@@ -13,6 +13,7 @@
 
 #include "controller/Controller.h"
 #include "bluetooth/Communication.h"
+#include "bluetooth/Telemetry.h"
 
 #define LOOP_TIME 10
 
@@ -38,10 +39,24 @@ Motor* volatile motor = nullptr;
     MotorSensor* motorSensor = new MotorSensor();
     motor = new Motor(motorSensor);
 
-    Communication::init();
-    Communication::setCallback([controller](const char* command) {
-        return controller->handleCommand(command);
-    });
+    Communication::Handlers handlers;
+    handlers.readParameters = [controller]() {
+        Parameters parameters = controller->getParameters();
+        return Protocol::Parameters{parameters.k1, parameters.k2, parameters.k3, parameters.targetAngle};
+    };
+    handlers.writeParameters = [controller](const Protocol::Parameters& parameters) -> uint8_t {
+        bool isValid = controller->setParameters({parameters.k1, parameters.k2, parameters.k3, parameters.targetAngle});
+        return isValid ? 0 : Protocol::ERROR_INVALID_VALUE;
+    };
+    handlers.executeCommand = [controller](Protocol::Command command) -> uint8_t {
+        switch (command) {
+            case Protocol::Command::SAVE_PARAMETERS:
+                return controller->saveParameters() ? 0 : Protocol::ERROR_BUSY;
+            default:
+                return Protocol::ERROR_UNKNOWN_COMMAND;
+        }
+    };
+    Communication::init(handlers);
 
     absolute_time_t nextLoop = get_absolute_time();
     while (true) {
@@ -53,6 +68,9 @@ Motor* volatile motor = nullptr;
 
         float torque = controller->loop(shaftVelocity, data, isVertical);
         motor->setTorque(torque);
+
+        Telemetry::record(data.angle, data.angularVelocity, shaftVelocity, torque,
+                          controller->getTargetAngle(), controller->isBalancing());
 
         if (absolute_time_diff_us(get_absolute_time(), nextLoop) <= 0) {
             nextLoop = get_absolute_time();

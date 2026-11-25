@@ -1,2 +1,4 @@
 /build/
 /site/
+/web/dist/
+/web/node_modules/

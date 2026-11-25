@@ -5,9 +5,7 @@
 #include "Controller.h"
 
 #include <cmath>
-#include <cstdio>
 
-#include "../bluetooth/Communication.h"
 #include "Storage.h"
 
 #define MAXIMUM_VOLTAGE                5
@@ -18,8 +16,6 @@
 #define ANGLE_ADJUSTMENT_TIMEOUT       500
 #define ANGLE_ADJUSTMENT_THRESHOLD     5
 #define ANGLE_ADJUSTMENT_STEP          0.025f
-
-#define NOTIFICATION_TIMEOUT           50
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -41,13 +37,6 @@ Controller::Controller() {
 float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
     auto [angle, angularVelocity] = data;
 
-    if (notificationCounter++ >= NOTIFICATION_TIMEOUT) {
-        char buffer[32];
-        snprintf(buffer, sizeof(buffer), "T:%.2f C:%.2f", targetAngle, angle);
-        Communication::sendNotification(buffer);
-        notificationCounter = 0;
-    }
-
     float error = angle - targetAngle;
     isRunning = shouldRun(error, isVertical);
     if (isRunning) {
@@ -59,30 +48,40 @@ float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
     return 0;
 }
 
-int Controller::handleCommand(const char* command) {
-    if (strcmp(command, "save") == 0) {
-        if (isRunning) {
-            return 0x80;
-        }
-        Storage::writeAtIndex(k1, 3);
-        Storage::writeAtIndex(k2, 4);
-        Storage::writeAtIndex(k3, 5);
-        Storage::writeAtIndex(targetAngle, 6);
-        return 0;
-    }
+Parameters Controller::getParameters() const {
+    return {k1, k2, k3, targetAngle};
+}
 
-    char name[16];
-    float value;
-    if (sscanf(command, "%15[^=]=%f", name, &value) == 2) {
-        if (strcmp(name, "k1") == 0) k1 = value;
-        else if (strcmp(name, "k2") == 0) k2 = value;
-        else if (strcmp(name, "k3") == 0) k3 = value;
-        else if (strcmp(name, "angle") == 0) targetAngle = value;
-        else return 0x80;
-        return 0;
+bool Controller::setParameters(const Parameters& parameters) {
+    if (!std::isfinite(parameters.k1) || !std::isfinite(parameters.k2) ||
+        !std::isfinite(parameters.k3) || !std::isfinite(parameters.targetAngle)) {
+        return false;
     }
-    
-    return 0x80;
+    k1 = parameters.k1;
+    k2 = parameters.k2;
+    k3 = parameters.k3;
+    targetAngle = parameters.targetAngle;
+    return true;
+}
+
+bool Controller::saveParameters() {
+    // Writing flash pauses both cores, which would stop the motor mid-balance.
+    if (isRunning) {
+        return false;
+    }
+    Storage::writeAtIndex(k1, 3);
+    Storage::writeAtIndex(k2, 4);
+    Storage::writeAtIndex(k3, 5);
+    Storage::writeAtIndex(targetAngle, 6);
+    return true;
+}
+
+bool Controller::isBalancing() const {
+    return isRunning;
+}
+
+float Controller::getTargetAngle() const {
+    return targetAngle;
 }
 
 bool Controller::shouldRun(float error, bool isVertical) {

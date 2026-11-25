@@ -19,4 +19,6 @@ The software is structured into modular components designed for the RP2350 dual-
     *   `Controller`: Implements the state-feedback controller logic to calculate torque and adjust `targetAngle`.
     *   `Storage`: Saves/Restores calibration data and tuning parameters to flash memory.
 *   **`src/bluetooth/`**:
-    *   `Communication`: Manages the BLE stack, GATT services, and handles incoming parameter updates.
+    *   `Communication`: Manages the BLE stack and GATT services: parameter reads and writes, commands, and the telemetry stream.
+    *   `Telemetry`: Lock-free ring buffer that the control loop writes samples into and the BLE stack drains.
+    *   `Protocol.h`: The BLE wire format shared with the web app (see [Tuning](../tuning.md#ble-protocol)).
