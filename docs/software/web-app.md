@@ -12,8 +12,8 @@ The web app connects to the robot straight from the browser via [Web Bluetooth](
 ## Usage
 
 1.  Click **Connect…** and pick **Triangle** in the browser's device picker.
-2.  The chart streams the current and target angle at 100 Hz over the last 30 seconds. Above it are the latest angle, target, error, torque and wheel speed, plus the sample rate and the number of samples dropped on the way.
-3.  The [parameters](../tuning.md) are loaded from the robot when you connect. Edit them and click **Apply** to send all four at once, or **Reload** to fetch the current values again.
+2.  Above the chart are the latest angle, target, error, angular velocity, wheel speed and torque, plus the sample rate and the number of samples dropped on the way. Tap a value to show or hide it on the chart. Angles (angle, target, error), angular velocities (gyro and wheel, both in °/s) and torque each get their own stacked chart. The charts stream at 100 Hz over the last 30 seconds.
+3.  The [parameters](../tuning.md) are loaded from the robot when you connect. Edit them and click **Apply** to send only the values you changed, so the robot keeps its own adjustments to the rest, or **Reload** to fetch the current values again.
 4.  Click **Save to flash** to keep the values after a restart. It's disabled while the robot is balancing.
 
 If the connection drops, the app keeps trying to reconnect until you click **Disconnect**.

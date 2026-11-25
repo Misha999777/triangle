@@ -79,7 +79,7 @@ int Communication::attWriteCallback(hci_con_handle_t connection, uint16_t attHan
         case TELEMETRY_CONFIG_HANDLE:
             connectionHandle = connection;
             isTelemetryEnabled = little_endian_read_16(buffer, 0) == GATT_CLIENT_CHARACTERISTICS_CONFIGURATION_NOTIFICATION;
-            Telemetry::clear(); // start the stream fresh instead of with stale samples
+            Telemetry::clear();
             return 0;
 
         case PARAMETERS_HANDLE: {
@@ -153,7 +153,6 @@ void Communication::sendTelemetry() {
     }
     att_server_notify(connectionHandle, TELEMETRY_HANDLE, packet, size);
 
-    // Keep going while a full batch is waiting; otherwise let the timer collect the next one.
     if (Telemetry::available() >= sampleCount) {
         att_server_request_can_send_now_event(connectionHandle);
     }
