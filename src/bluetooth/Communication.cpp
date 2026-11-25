@@ -5,9 +5,10 @@
 #include "Communication.h"
 
 #include <algorithm>
-#include <cstring>
 
 #include <pico/cyw43_arch.h>
+#include <pb_decode.h>
+#include <pb_encode.h>
 #include "ble_config.h"
 
 #include "Telemetry.h"
@@ -20,7 +21,6 @@
 // Samples are batched: the timer only asks to send when there is data, and each notification
 // carries as many samples as the negotiated MTU allows.
 #define TELEMETRY_INTERVAL_MS    25
-#define MAX_SAMPLES_PER_PACKET   18
 
 constexpr uint8_t advData[] = {
     0x02, 0x01, 0x06, // Length: 2 bytes, type: Bluetooth Data Type Flags (0x01), value: LE General Discoverable Mode + BR/EDR Not Supported (0x02 + 0x04)
@@ -58,8 +58,13 @@ uint16_t Communication::attReadCallback(hci_con_handle_t connection, uint16_t at
     UNUSED(connection);
 
     if (attHandle == PARAMETERS_HANDLE) {
-        Protocol::Parameters parameters = handlers.readParameters();
-        return att_read_callback_handle_blob((const uint8_t*) &parameters, sizeof(parameters), offset, buffer, bufferSize);
+        triangle_v1_Parameters parameters = handlers.readParameters();
+        uint8_t encoded[triangle_v1_Parameters_size];
+        pb_ostream_t stream = pb_ostream_from_buffer(encoded, sizeof(encoded));
+        if (!pb_encode(&stream, triangle_v1_Parameters_fields, &parameters)) {
+            return 0;
+        }
+        return att_read_callback_handle_blob(encoded, stream.bytes_written, offset, buffer, bufferSize);
     }
     return 0;
 }
@@ -78,19 +83,22 @@ int Communication::attWriteCallback(hci_con_handle_t connection, uint16_t attHan
             return 0;
 
         case PARAMETERS_HANDLE: {
-            if (bufferSize != sizeof(Protocol::Parameters)) {
-                return ATT_ERROR_INVALID_ATTRIBUTE_VALUE_LENGTH;
+            triangle_v1_Parameters parameters = triangle_v1_Parameters_init_zero;
+            pb_istream_t stream = pb_istream_from_buffer(buffer, bufferSize);
+            if (!pb_decode(&stream, triangle_v1_Parameters_fields, &parameters)) {
+                return triangle_v1_Error_ERROR_INVALID_VALUE;
             }
-            Protocol::Parameters parameters;
-            memcpy(&parameters, buffer, sizeof(parameters));
             return handlers.writeParameters(parameters);
         }
 
-        case COMMAND_HANDLE:
-            if (bufferSize != 1) {
-                return ATT_ERROR_INVALID_ATTRIBUTE_VALUE_LENGTH;
+        case COMMAND_HANDLE: {
+            triangle_v1_Command command = triangle_v1_Command_init_zero;
+            pb_istream_t stream = pb_istream_from_buffer(buffer, bufferSize);
+            if (!pb_decode(&stream, triangle_v1_Command_fields, &command)) {
+                return triangle_v1_Error_ERROR_INVALID_VALUE;
             }
-            return handlers.executeCommand((Protocol::Command) buffer[0]);
+            return handlers.executeCommand(command);
+        }
 
         default:
             return 0;
@@ -136,26 +144,17 @@ void Communication::sendTelemetry() {
         return;
     }
 
-    static uint8_t packet[sizeof(Protocol::TelemetryHeader) + MAX_SAMPLES_PER_PACKET * sizeof(Protocol::TelemetrySample)];
-
-    uint16_t payloadSize = att_server_get_mtu(connectionHandle) - 3;
-    size_t maxSamples = std::min<size_t>(
-        (payloadSize - sizeof(Protocol::TelemetryHeader)) / sizeof(Protocol::TelemetrySample), MAX_SAMPLES_PER_PACKET);
-
-    auto* samples = reinterpret_cast<Protocol::TelemetrySample*>(packet + sizeof(Protocol::TelemetryHeader));
-    uint16_t sequence = 0;
-    size_t count = Telemetry::read(samples, maxSamples, sequence);
-    if (count == 0) {
+    static uint8_t packet[triangle_v1_TelemetryBatch_size];
+    size_t payloadSize = att_server_get_mtu(connectionHandle) - 3;
+    size_t sampleCount = 0;
+    size_t size = Telemetry::encodeBatch(packet, std::min(payloadSize, sizeof(packet)), sampleCount);
+    if (size == 0) {
         return;
     }
+    att_server_notify(connectionHandle, TELEMETRY_HANDLE, packet, size);
 
-    Protocol::TelemetryHeader header = {Protocol::TELEMETRY_VERSION, (uint8_t) count, sequence};
-    memcpy(packet, &header, sizeof(header));
-    att_server_notify(connectionHandle, TELEMETRY_HANDLE, packet,
-                      sizeof(Protocol::TelemetryHeader) + count * sizeof(Protocol::TelemetrySample));
-
-    // Keep going while a full packet is waiting; otherwise let the timer batch up the next one.
-    if (Telemetry::available() >= maxSamples) {
+    // Keep going while a full batch is waiting; otherwise let the timer collect the next one.
+    if (Telemetry::available() >= sampleCount) {
         att_server_request_can_send_now_event(connectionHandle);
     }
 }

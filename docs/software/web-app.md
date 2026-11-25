@@ -25,7 +25,8 @@ If the connection drops, the app keeps trying to reconnect until you click **Dis
 | UI    | Vite, React, [Fluent UI](https://github.com/microsoft/fluentui), [uPlot](https://github.com/leeoniya/uPlot) |
 | Link  | Web Bluetooth                                                                                               |
 
-*   **`web/src/services/robot.js`**: all communication with the robot: connecting, decoding the [telemetry stream](../tuning.md#ble-protocol), reading and writing parameters, and reconnecting. It must stay in sync with `src/bluetooth/Protocol.h`.
+*   **`web/src/services/robot.js`**: all communication with the robot: connecting, decoding the [telemetry stream](../tuning.md#ble-protocol), reading and writing parameters, and reconnecting.
+*   **`web/src/gen/`**: protobuf-es code generated from `proto/triangle.proto` by `npm run dev` and `npm run build` (see [Changing the protocol](../tuning.md#changing-the-protocol)). Requires `protoc` to be installed.
 *   **`web/src/components/`**: the connection bar, the telemetry chart and the parameters panel.
 
 ## Development

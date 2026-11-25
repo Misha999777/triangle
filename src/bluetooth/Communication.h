@@ -8,15 +8,15 @@
 
 #include <btstack.h>
 
-#include "Protocol.h"
+#include "proto/triangle.pb.h"
 
 class Communication {
 public:
-    // Invoked from the BLE stack's context. Write handlers return 0 or a Protocol::ERROR_* code.
+    // Invoked from the BLE stack's context. Write handlers return ERROR_NONE or another triangle_v1_Error.
     struct Handlers {
-        std::function<Protocol::Parameters()> readParameters;
-        std::function<uint8_t(const Protocol::Parameters&)> writeParameters;
-        std::function<uint8_t(Protocol::Command)> executeCommand;
+        std::function<triangle_v1_Parameters()> readParameters;
+        std::function<triangle_v1_Error(const triangle_v1_Parameters&)> writeParameters;
+        std::function<triangle_v1_Error(const triangle_v1_Command&)> executeCommand;
     };
 
     static void init(const Handlers& newHandlers);

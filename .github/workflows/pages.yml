@@ -28,12 +28,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: web/package-lock.json
 
       - name: Install MkDocs
         run: pip install mkdocs-material
       - name: Build site
         run: mkdocs build
 
+      - name: Install protoc
+        run: sudo apt-get install -y protobuf-compiler
       - name: Build web app
         working-directory: web
         run: |

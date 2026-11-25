@@ -4,11 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "proto": "node scripts/generate-proto.mjs",
+    "predev": "npm run proto",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "prebuild": "npm run proto",
+    "build": "vite build"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.17.0",
     "@fluentui/react-components": "^9.74.7",
     "@fluentui/react-icons": "^2.0.341",
     "react": "^19.3.0",
@@ -16,6 +19,7 @@
     "uplot": "^1.6.32"
   },
   "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.17.0",
     "@vitejs/plugin-react": "^6.1.1",
     "vite": "^8.3.0"
   }
