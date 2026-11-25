@@ -1,0 +1,44 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+.title {
+  margin-right: 8px;
+}
+
+.device {
+  color: var(--colorNeutralForeground2);
+}
+
+.status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error {
+  margin: 0 12px 12px;
+}
+
+@media (max-width: 720px) {
+  .bar {
+    flex-wrap: wrap;
+    padding: 8px;
+  }
+
+  .device {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .error {
+    margin: 0 8px 8px;
+  }
+}

@@ -11,11 +11,24 @@
 #define K2             0.3f
 #define K3             0.1f
 
+struct Parameters {
+  float k1;
+  float k2;
+  float k3;
+  float targetAngle;
+};
+
 class Controller {
 public:
   Controller();
   float loop(float shaftVelocity, IMUData data, bool isVertical);
-  int handleCommand(const char* command);
+
+  Parameters getParameters() const;
+  bool setParameters(const Parameters& parameters);
+  bool saveParameters();
+
+  bool isBalancing() const;
+  float getTargetAngle() const;
 
 private:
   bool isRunning = false;
@@ -32,6 +45,4 @@ private:
   float k1 = K1;
   float k2 = K2;
   float k3 = K3;
-
-  int notificationCounter = 0;
 };

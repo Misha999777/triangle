@@ -42,4 +42,5 @@ nav:
   - Software:
     - Architecture: software/architecture.md
     - Building & Flashing: software/building.md
+    - Web App: software/web-app.md
   - Tuning: tuning.md
