@@ -1,15 +1,12 @@
-// Must match src/bluetooth/config/ble_config.gatt and src/bluetooth/Protocol.h in the firmware.
+import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
+
+import { CommandSchema, CommandType, ParametersSchema, TelemetryBatchSchema } from '../gen/triangle_pb.js'
+
+// Must match src/bluetooth/config/ble_config.gatt in the firmware. The payloads are defined in proto/triangle.proto.
 const SERVICE_UUID = '0000ff10-0000-1000-8000-00805f9b34fb'
 const PARAMETERS_UUID = '0000ff11-0000-1000-8000-00805f9b34fb'
 const TELEMETRY_UUID = '0000ff12-0000-1000-8000-00805f9b34fb'
 const COMMAND_UUID = '0000ff13-0000-1000-8000-00805f9b34fb'
-
-const COMMAND_SAVE_PARAMETERS = 0x01
-
-const TELEMETRY_VERSION = 1
-const HEADER_SIZE = 4
-const SAMPLE_SIZE = 13
-const FLAG_BALANCING = 0x01
 
 const MAX_RECONNECT_DELAY_MS = 5000
 
@@ -27,9 +24,8 @@ let operationQueue = Promise.resolve()
 
 const telemetry = {
   expectedSequence: null,
-  firstTime: null,
-  lastRawTime: 0,
-  timeOffset: 0,
+  lastTimeMs: null,
+  elapsedMs: 0,
   received: 0,
   dropped: 0,
 }
@@ -53,41 +49,45 @@ function setState(next) {
 }
 
 function resetTelemetry() {
-  Object.assign(telemetry, { expectedSequence: null, firstTime: null, lastRawTime: 0, timeOffset: 0, received: 0, dropped: 0 })
+  Object.assign(telemetry, { expectedSequence: null, lastTimeMs: null, elapsedMs: 0, received: 0, dropped: 0 })
 }
 
+const toBytes = view => new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
+
 function decodeTelemetry(view) {
-  if (view.byteLength < HEADER_SIZE || view.getUint8(0) !== TELEMETRY_VERSION) return []
-
-  const count = view.getUint8(1)
-  const sequence = view.getUint16(2, true)
-  if (view.byteLength < HEADER_SIZE + count * SAMPLE_SIZE) return []
-
-  if (telemetry.expectedSequence !== null) {
-    telemetry.dropped += (sequence - telemetry.expectedSequence) & 0xffff
+  let batch
+  try {
+    batch = fromBinary(TelemetryBatchSchema, toBytes(view))
+  } catch {
+    return []
   }
-  telemetry.expectedSequence = (sequence + count) & 0xffff
+
+  const count = batch.angle.length
+  if (telemetry.expectedSequence !== null) {
+    telemetry.dropped += Math.max(0, batch.sequence - telemetry.expectedSequence)
+  }
+  telemetry.expectedSequence = batch.sequence + count
   telemetry.received += count
+
+  // The robot's millisecond clock is 32-bit and wraps after ~49 days, so add up unsigned differences.
+  if (telemetry.lastTimeMs !== null) {
+    telemetry.elapsedMs += (batch.timeMs - telemetry.lastTimeMs) >>> 0
+  }
+  telemetry.lastTimeMs = batch.timeMs
 
   const samples = []
   for (let i = 0; i < count; i++) {
-    const offset = HEADER_SIZE + i * SAMPLE_SIZE
-
-    // The firmware sends the low 16 bits of its millisecond clock; unwrap it into a continuous time.
-    const rawTime = view.getUint16(offset, true)
-    if (rawTime < telemetry.lastRawTime) telemetry.timeOffset += 0x10000
-    telemetry.lastRawTime = rawTime
-    const timeMs = telemetry.timeOffset + rawTime
-    telemetry.firstTime ??= timeMs
-
+    const deltaMs = i === 0 ? 0 : batch.timeDeltaMs[i] ?? 0
+    telemetry.elapsedMs += deltaMs
+    telemetry.lastTimeMs = (telemetry.lastTimeMs + deltaMs) >>> 0
     samples.push({
-      time: (timeMs - telemetry.firstTime) / 1000,
-      angle: view.getInt16(offset + 2, true) / 100,
-      angularVelocity: view.getInt16(offset + 4, true) / 10,
-      wheelVelocity: view.getInt16(offset + 6, true) / 10,
-      torque: view.getInt16(offset + 8, true) / 1000,
-      target: view.getInt16(offset + 10, true) / 100,
-      balancing: (view.getUint8(offset + 12) & FLAG_BALANCING) !== 0,
+      time: telemetry.elapsedMs / 1000,
+      angle: batch.angle[i],
+      angularVelocity: batch.angularVelocity[i],
+      wheelVelocity: batch.wheelVelocity[i],
+      torque: batch.torque[i],
+      target: batch.targetAngle[i],
+      balancing: batch.balancing[i] ?? false,
     })
   }
   return samples
@@ -226,27 +226,20 @@ export async function disconnect() {
 /** @returns {Promise<{k1: number, k2: number, k3: number, targetAngle: number}>} */
 export function readParameters() {
   return enqueue(async ({ parameters }) => {
-    const view = await parameters.readValue()
-    return {
-      k1: view.getFloat32(0, true),
-      k2: view.getFloat32(4, true),
-      k3: view.getFloat32(8, true),
-      targetAngle: view.getFloat32(12, true),
-    }
+    const { k1, k2, k3, targetAngle } = fromBinary(ParametersSchema, toBytes(await parameters.readValue()))
+    return { k1, k2, k3, targetAngle }
   })
 }
 
-/** @param {{k1: number, k2: number, k3: number, targetAngle: number}} values */
-export function writeParameters({ k1, k2, k3, targetAngle }) {
-  const view = new DataView(new ArrayBuffer(16))
-  view.setFloat32(0, k1, true)
-  view.setFloat32(4, k2, true)
-  view.setFloat32(8, k3, true)
-  view.setFloat32(12, targetAngle, true)
-
+/**
+ * Sends only the given parameters; the robot keeps its current value for the rest.
+ * @param {{k1?: number, k2?: number, k3?: number, targetAngle?: number}} values
+ */
+export function writeParameters(values) {
+  const bytes = toBinary(ParametersSchema, create(ParametersSchema, values))
   return enqueue(async ({ parameters }) => {
     try {
-      await parameters.writeValueWithResponse(view)
+      await parameters.writeValueWithResponse(bytes)
     } catch (e) {
       throw `The robot rejected the values (${errorMessage(e)})`
     }
@@ -254,9 +247,10 @@ export function writeParameters({ k1, k2, k3, targetAngle }) {
 }
 
 export function saveParameters() {
+  const bytes = toBinary(CommandSchema, create(CommandSchema, { type: CommandType.SAVE_PARAMETERS }))
   return enqueue(async ({ command }) => {
     try {
-      await command.writeValueWithResponse(new Uint8Array([COMMAND_SAVE_PARAMETERS]))
+      await command.writeValueWithResponse(bytes)
     } catch {
       // The browser doesn't expose the ATT error code; the only reason the firmware refuses is balancing.
       throw "The robot rejected the save. It can't save while it is balancing. Lay it down and try again."

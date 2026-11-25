@@ -76,7 +76,8 @@ export default function ParametersPanel({ linkState }) {
   const handleApply = event => {
     event.preventDefault()
     run(async () => {
-      await writeParameters(Object.fromEntries(PARAMETERS.map(({ name }) => [name, Number(values[name])])))
+      // Only the edited fields: the robot adjusts the target angle itself while balancing.
+      await writeParameters(Object.fromEntries(changed.map(({ name }) => [name, Number(values[name])])))
       const parameters = await readParameters()
       setDevice(parameters)
       setValues(toFields(parameters))

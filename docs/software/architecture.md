@@ -20,5 +20,5 @@ The software is structured into modular components designed for the RP2350 dual-
     *   `Storage`: Saves/Restores calibration data and tuning parameters to flash memory.
 *   **`src/bluetooth/`**:
     *   `Communication`: Manages the BLE stack and GATT services: parameter reads and writes, commands, and the telemetry stream.
-    *   `Telemetry`: Lock-free ring buffer that the control loop writes samples into and the BLE stack drains.
-    *   `Protocol.h`: The BLE wire format shared with the web app (see [Tuning](../tuning.md#ble-protocol)).
+    *   `Telemetry`: Lock-free ring buffer that the control loop writes samples into and the BLE stack drains into protobuf batches.
+*   **`proto/`**: `triangle.proto`, the BLE wire format shared with the web app (see [Tuning](../tuning.md#ble-protocol)). CMake generates the nanopb code for it at build time.

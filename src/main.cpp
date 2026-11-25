@@ -42,18 +42,24 @@ Motor* volatile motor = nullptr;
     Communication::Handlers handlers;
     handlers.readParameters = [controller]() {
         Parameters parameters = controller->getParameters();
-        return Protocol::Parameters{parameters.k1, parameters.k2, parameters.k3, parameters.targetAngle};
+        return triangle_v1_Parameters{
+            true, parameters.k1, true, parameters.k2, true, parameters.k3, true, parameters.targetAngle,
+        };
     };
-    handlers.writeParameters = [controller](const Protocol::Parameters& parameters) -> uint8_t {
-        bool isValid = controller->setParameters({parameters.k1, parameters.k2, parameters.k3, parameters.targetAngle});
-        return isValid ? 0 : Protocol::ERROR_INVALID_VALUE;
+    handlers.writeParameters = [controller](const triangle_v1_Parameters& update) {
+        Parameters parameters = controller->getParameters();
+        if (update.has_k1) parameters.k1 = update.k1;
+        if (update.has_k2) parameters.k2 = update.k2;
+        if (update.has_k3) parameters.k3 = update.k3;
+        if (update.has_target_angle) parameters.targetAngle = update.target_angle;
+        return controller->setParameters(parameters) ? triangle_v1_Error_ERROR_NONE : triangle_v1_Error_ERROR_INVALID_VALUE;
     };
-    handlers.executeCommand = [controller](Protocol::Command command) -> uint8_t {
-        switch (command) {
-            case Protocol::Command::SAVE_PARAMETERS:
-                return controller->saveParameters() ? 0 : Protocol::ERROR_BUSY;
+    handlers.executeCommand = [controller](const triangle_v1_Command& command) {
+        switch (command.type) {
+            case triangle_v1_CommandType_COMMAND_TYPE_SAVE_PARAMETERS:
+                return controller->saveParameters() ? triangle_v1_Error_ERROR_NONE : triangle_v1_Error_ERROR_BUSY;
             default:
-                return Protocol::ERROR_UNKNOWN_COMMAND;
+                return triangle_v1_Error_ERROR_UNKNOWN_COMMAND;
         }
     };
     Communication::init(handlers);

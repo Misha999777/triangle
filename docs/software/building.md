@@ -10,6 +10,13 @@ Ensure you have the following installed on your system:
 2.  Ninja Build
 3.  Arm Toolchain (`arm-none-eabi`)
 4.  Raspberry Pi Pico SDK
+5.  Python 3 (also required by the Pico SDK)
+6.  `protoc`, the Protocol Buffers compiler, for the [BLE protocol](../tuning.md#ble-protocol):
+    *   Windows: `winget install Google.Protobuf`
+    *   macOS: `brew install protobuf`
+    *   Linux: `sudo apt install protobuf-compiler`
+
+The first CMake run also downloads nanopb and sets up its generator in the build directory, so it needs an internet connection.
 
 **Environment Variables:**
 Ensure `PICO_SDK_PATH` is set to the location of your pico-sdk.
