@@ -1,3 +1,7 @@
+//
+// Created by Михайло Грошевий on 25/11/2026.
+//
+
 #include "Telemetry.h"
 
 #include <pb_encode.h>
@@ -83,7 +87,6 @@ size_t Telemetry::encodeBatch(uint8_t* buffer, size_t maxSize, size_t& sampleCou
         return 0;
     }
 
-    // Shrink the batch until it fits.
     static triangle_v1_TelemetryBatch batch;
     size_t encodedSize = 0;
     for (; count > 0; count--) {

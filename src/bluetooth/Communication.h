@@ -12,7 +12,6 @@
 
 class Communication {
 public:
-    // Invoked from the BLE stack's context. Write handlers return ERROR_NONE or another triangle_v1_Error.
     struct Handlers {
         std::function<triangle_v1_Parameters()> readParameters;
         std::function<triangle_v1_Error(const triangle_v1_Parameters&)> writeParameters;
