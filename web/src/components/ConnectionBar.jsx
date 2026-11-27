@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import {
   Badge,
   Button,
@@ -10,7 +8,8 @@ import {
 } from '@fluentui/react-components'
 import { PlugConnectedRegular, PlugDisconnectedRegular } from '@fluentui/react-icons'
 
-import { connect, deviceName, disconnect, errorMessage, isSupported } from '../services/robot'
+import useAction from '../hooks/useAction'
+import { connect, deviceName, disconnect, isSupported } from '../services/robot'
 
 import styles from '../styles/ConnectionBar.module.css'
 
@@ -22,20 +21,7 @@ const STATE_BADGES = {
 }
 
 export default function ConnectionBar({ linkState }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-
-  const run = async action => {
-    setBusy(true)
-    setError(null)
-    try {
-      await action()
-    } catch (e) {
-      setError(errorMessage(e))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const { busy, message, run } = useAction()
 
   const supported = isSupported()
   const isLinked = linkState !== 'disconnected'
@@ -73,9 +59,9 @@ export default function ConnectionBar({ linkState }) {
         </MessageBar>
       )}
 
-      {error && (
-        <MessageBar intent="error" className={styles.error}>
-          <MessageBarBody>{error}</MessageBarBody>
+      {message && (
+        <MessageBar intent={message.intent} className={styles.error}>
+          <MessageBarBody>{message.text}</MessageBarBody>
         </MessageBar>
       )}
     </>

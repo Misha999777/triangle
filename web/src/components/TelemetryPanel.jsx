@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 
-import { Badge, Text, ToggleButton, webDarkTheme } from '@fluentui/react-components'
+import { Badge, Text, ToggleButton } from '@fluentui/react-components'
 import uPlot from 'uplot'
 
 import { onSamples, onStats } from '../services/robot'
@@ -10,7 +10,7 @@ import styles from '../styles/TelemetryPanel.module.css'
 const WINDOW_SECONDS = 30
 const READOUT_INTERVAL_MS = 100
 const Y_AXIS_WIDTH = 56
-const DEFAULT_SELECTION = ['angle', 'target']
+const DEFAULT_SELECTION = ['angle', 'targetAngle']
 
 // Categorical palette slots validated for colour-blind separation on the light and dark surfaces.
 const COLORS = {
@@ -20,7 +20,7 @@ const COLORS = {
 
 const SIGNALS = [
   { key: 'angle', label: 'Angle', unit: '°', digits: 2, chart: 'angle', slot: 1 },
-  { key: 'target', label: 'Target', unit: '°', digits: 2, chart: 'angle', slot: 2, dashed: true },
+  { key: 'targetAngle', label: 'Target', unit: '°', digits: 2, chart: 'angle', slot: 2, dashed: true },
   { key: 'error', label: 'Error', unit: '°', digits: 2, chart: 'angle', slot: 3 },
   { key: 'angularVelocity', label: 'Gyro', unit: '°/s', digits: 1, chart: 'velocity', slot: 1 },
   { key: 'wheelVelocity', label: 'Wheel', unit: '°/s', digits: 0, chart: 'velocity', slot: 2 },
@@ -37,7 +37,7 @@ const emptyData = () => Object.fromEntries(['time', 'balancing', ...SIGNALS.map(
 
 function append(data, samples) {
   for (const sample of samples) {
-    const values = { ...sample, error: sample.angle - sample.target, wheelVelocity: sample.wheelVelocity * 180 / Math.PI }
+    const values = { ...sample, error: sample.angle - sample.targetAngle, wheelVelocity: sample.wheelVelocity * 180 / Math.PI }
     for (const key of Object.keys(data)) data[key].push(values[key])
   }
 
@@ -47,7 +47,7 @@ function append(data, samples) {
   }
 }
 
-export default function TelemetryPanel({ theme, linkState }) {
+export default function TelemetryPanel({ theme, isDark, linkState }) {
   const elementsRef = useRef({})
   const plotsRef = useRef([])
   const dataRef = useRef(emptyData())
@@ -57,7 +57,7 @@ export default function TelemetryPanel({ theme, linkState }) {
   const [stats, setStats] = useState(null)
   const [selection, setSelection] = useState(DEFAULT_SELECTION)
 
-  const colors = theme === webDarkTheme ? COLORS.dark : COLORS.light
+  const colors = isDark ? COLORS.dark : COLORS.light
   const charts = CHARTS
     .map(chart => ({ ...chart, series: SIGNALS.filter(s => s.chart === chart.id && selection.includes(s.key)) }))
     .filter(chart => chart.series.length > 0)

@@ -10,14 +10,14 @@ import ParametersPanel from './components/ParametersPanel'
 import styles from './styles/App.module.css'
 
 export default function App() {
-  const theme = useSystemTheme()
+  const { theme, isDark } = useSystemTheme()
   const linkState = useLinkState()
 
   return (
     <FluentProvider theme={theme} className={styles.root}>
       <ConnectionBar linkState={linkState} />
       <main className={styles.content}>
-        <TelemetryPanel theme={theme} linkState={linkState} />
+        <TelemetryPanel theme={theme} isDark={isDark} linkState={linkState} />
         <ParametersPanel linkState={linkState} />
       </main>
     </FluentProvider>

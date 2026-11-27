@@ -5,44 +5,37 @@
 #pragma once
 
 #include "../hardware/AngleSensor.h"
+#include "../bluetooth/Communication.h"
+#include "Storage.h"
 
-#define STARTING_ANGLE 92.5f
-#define K1             10.0f
-#define K2             0.3f
-#define K3             0.1f
-
-struct Parameters {
-  float k1;
-  float k2;
-  float k3;
-  float targetAngle;
-};
-
-class Controller {
+class Controller : public Communication::Delegate {
 public:
-  Controller();
-  float loop(float shaftVelocity, IMUData data, bool isVertical);
+    Controller(Storage& storage);
+    float loop(float shaftVelocity, IMUData data, bool isVertical);
 
-  Parameters getParameters() const;
-  bool setParameters(const Parameters& parameters);
-  bool saveParameters();
+    triangle_v1_Parameters getParameters() override;
+    bool setParameters(const triangle_v1_Parameters& parameters) override;
+    bool saveParameters() override;
 
-  bool isBalancing() const;
-  float getTargetAngle() const;
+    bool isBalancing();
+    float getTargetAngle();
 
 private:
-  bool isRunning = false;
-  bool shouldRun(float error, bool isVertical);
-  float controller(float angle, float velocity, float shaftVelocity);
-  void adjustTargetAngle(float shaftVelocity);
+    bool shouldRun(float error, bool isVertical);
+    float computeTorque(float angle, float velocity, float shaftVelocity);
+    void adjustTargetAngle(float shaftVelocity);
 
-  float averageVelocity = 0;
-  int averageVelocityCounter = 0;
+    Storage& storage;
 
-  int errorCounter = 0;
+    bool isRunning = false;
 
-  float targetAngle = STARTING_ANGLE;
-  float k1 = K1;
-  float k2 = K2;
-  float k3 = K3;
+    float averageVelocity = 0;
+    int averageVelocityCounter = 0;
+
+    int errorCounter = 0;
+
+    float targetAngle = 0;
+    float k1 = 0;
+    float k2 = 0;
+    float k3 = 0;
 };

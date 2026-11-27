@@ -6,6 +6,8 @@
 
 #include <pico/types.h>
 
+#include "../controller/Storage.h"
+
 struct IMUData {
     float angle;
     float angularVelocity;
@@ -13,7 +15,7 @@ struct IMUData {
 
 class AngleSensor {
 public:
-    AngleSensor();
+    AngleSensor(Storage& storage);
     IMUData readData();
     bool isVertical();
 
@@ -31,5 +33,5 @@ private:
     void readFrom(int address, uint8_t *buffer, int length);
     void readAccel();
     void readGyro();
-    void calibrateGyro();
+    void calibrateGyro(Storage& storage);
 };

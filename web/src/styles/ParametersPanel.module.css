@@ -1,4 +1,5 @@
 .panel {
+  composes: card from './App.module.css';
   width: 300px;
   flex-shrink: 0;
   display: flex;
@@ -6,9 +7,6 @@
   gap: 12px;
   padding: 16px;
   overflow-y: auto;
-  border-radius: var(--borderRadiusLarge);
-  background: var(--colorNeutralBackground1);
-  box-shadow: var(--shadow4);
 }
 
 .header {

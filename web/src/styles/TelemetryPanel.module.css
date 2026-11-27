@@ -1,13 +1,11 @@
 .panel {
+  composes: card from './App.module.css';
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border-radius: var(--borderRadiusLarge);
-  background: var(--colorNeutralBackground1);
-  box-shadow: var(--shadow4);
 }
 
 .status {

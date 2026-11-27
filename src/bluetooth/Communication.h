@@ -4,33 +4,36 @@
 
 #pragma once
 
-#include <functional>
-
 #include <btstack.h>
 
 #include "proto/triangle.pb.h"
+#include "Telemetry.h"
 
 class Communication {
 public:
-    struct Handlers {
-        std::function<triangle_v1_Parameters()> readParameters;
-        std::function<triangle_v1_Error(const triangle_v1_Parameters&)> writeParameters;
-        std::function<triangle_v1_Error(const triangle_v1_Command&)> executeCommand;
+    class Delegate {
+    public:
+        virtual ~Delegate() = default;
+
+        virtual triangle_v1_Parameters getParameters() = 0;
+        virtual bool setParameters(const triangle_v1_Parameters& parameters) = 0;
+        virtual bool saveParameters() = 0;
     };
 
-    static void init(const Handlers& newHandlers);
+    Communication(Delegate& delegate, Telemetry& telemetry);
+
+    int onAttRead(int attHandle, int offset, uint8_t* buffer, int bufferSize);
+    int onAttWrite(hci_con_handle_t connection, int attHandle, uint8_t* buffer, int bufferSize);
+    void onDisconnected();
+    void onTelemetryTimer();
+    void onCanSendNow();
 
 private:
-    static uint16_t attReadCallback(hci_con_handle_t, uint16_t, uint16_t, uint8_t*, uint16_t);
-    static int attWriteCallback(hci_con_handle_t, uint16_t, uint16_t, uint16_t, uint8_t*, uint16_t);
-    static void packetHandler(uint8_t packetType, uint16_t channel, uint8_t* packet, uint16_t size);
-    static void telemetryTimerHandler(btstack_timer_source_t* timer);
-    static void sendTelemetry();
+    Delegate& delegate;
+    Telemetry& telemetry;
 
-    static inline Handlers handlers;
-    static inline hci_con_handle_t connectionHandle = HCI_CON_HANDLE_INVALID;
-    static inline bool isTelemetryEnabled = false;
-
-    static inline btstack_timer_source_t telemetryTimer;
-    static inline btstack_packet_callback_registration_t hciEventRegistration;
+    hci_con_handle_t telemetryConnection = HCI_CON_HANDLE_INVALID;
+    btstack_timer_source_t telemetryTimer = {};
+    btstack_context_callback_registration_t canSendNowRegistration = {};
+    uint8_t telemetryPacket[triangle_v1_TelemetryBatch_size] = {};
 };

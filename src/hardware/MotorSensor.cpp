@@ -7,7 +7,7 @@
 #include <cmath>
 
 #include <hardware/gpio.h>
-#include "hardware/spi.h"
+#include <hardware/spi.h>
 #include <pico/time.h>
 
 #define PIN_CS    5
@@ -22,7 +22,7 @@
 #define SENSOR_RESOLUTION  14
 #define SENSOR_MAX_VALUE   16383.0f
 
-#define _2PI 6.28318530718f
+#define TWO_PI 6.28318530718f
 
 MotorSensor::MotorSensor() {
     critical_section_init(&lock);
@@ -40,27 +40,27 @@ MotorSensor::MotorSensor() {
 }
 
 float MotorSensor::readAngle() {
-    uint8_t tx_buf[2];
-    uint8_t rx_buf[2];
+    uint8_t txBuffer[2];
+    uint8_t rxBuffer[2];
 
-    tx_buf[0] = ANGLE_REGISTER >> 8 & 0xFF;
-    tx_buf[1] = ANGLE_REGISTER & 0xFF;
+    txBuffer[0] = ANGLE_REGISTER >> 8 & 0xFF;
+    txBuffer[1] = ANGLE_REGISTER & 0xFF;
 
     gpio_put(PIN_CS, false);
-    spi_write_blocking(SPI_PORT, tx_buf, 2);
+    spi_write_blocking(SPI_PORT, txBuffer, 2);
     gpio_put(PIN_CS, true);
 
     sleep_us(1);
 
     gpio_put(PIN_CS, false);
-    spi_read_blocking(SPI_PORT, 0, rx_buf, 2);
+    spi_read_blocking(SPI_PORT, 0, rxBuffer, 2);
     gpio_put(PIN_CS, true);
 
-    int data = rx_buf[0] << 8 | rx_buf[1];
-    int data_mask = 0xFFFF >> (16 - SENSOR_RESOLUTION);
+    int data = rxBuffer[0] << 8 | rxBuffer[1];
+    int dataMask = 0xFFFF >> (16 - SENSOR_RESOLUTION);
 
-    int masked = data & data_mask;
-    return (float) masked / SENSOR_MAX_VALUE * _2PI;
+    int masked = data & dataMask;
+    return (float) masked / SENSOR_MAX_VALUE * TWO_PI;
 }
 
 float MotorSensor::getAngle() {
@@ -68,12 +68,12 @@ float MotorSensor::getAngle() {
     float angle = readAngle();
 
     critical_section_enter_blocking(&lock);
-    float d_angle = angle - angle_prev;
-    if (std::abs(d_angle) > 0.8f * _2PI) {
-        full_rotations += d_angle > 0 ? -1 : 1;
+    float angleDelta = angle - previousAngle;
+    if (std::abs(angleDelta) > 0.8f * TWO_PI) {
+        fullRotations += angleDelta > 0 ? -1 : 1;
     }
-    angle_prev = angle;
-    angle_prev_ts = ts;
+    previousAngle = angle;
+    previousAngleTime = ts;
     critical_section_exit(&lock);
 
     return angle;
@@ -81,21 +81,21 @@ float MotorSensor::getAngle() {
 
 float MotorSensor::getVelocity() {
     critical_section_enter_blocking(&lock);
-    uint64_t ts = angle_prev_ts;
-    float angle = angle_prev;
-    int rotations = full_rotations;
+    uint64_t ts = previousAngleTime;
+    float angle = previousAngle;
+    int rotations = fullRotations;
     critical_section_exit(&lock);
 
-    if (ts == vel_angle_prev_ts) {
+    if (ts == velocityPreviousTime) {
         return velocity;
     }
 
-    float Ts = (ts - vel_angle_prev_ts) * 1e-6f;
-    velocity = ((rotations - vel_full_rotations) * _2PI + (angle - vel_angle_prev)) / Ts;
+    float elapsedSeconds = (ts - velocityPreviousTime) * 1e-6f;
+    velocity = ((rotations - velocityFullRotations) * TWO_PI + (angle - velocityPreviousAngle)) / elapsedSeconds;
 
-    vel_angle_prev = angle;
-    vel_angle_prev_ts = ts;
-    vel_full_rotations = rotations;
+    velocityPreviousAngle = angle;
+    velocityPreviousTime = ts;
+    velocityFullRotations = rotations;
 
     return velocity;
 }

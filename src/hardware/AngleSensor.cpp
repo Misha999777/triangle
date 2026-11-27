@@ -8,9 +8,7 @@
 #include <cmath>
 
 #include <hardware/gpio.h>
-#include "hardware/i2c.h"
-
-#include "../controller/Storage.h"
+#include <hardware/i2c.h>
 
 #define PINS_I2C_SDA               26
 #define PINS_I2C_SCL               27
@@ -31,7 +29,7 @@
 #define ACCEL_FILTER_VALUE         0.1f
 #define VERTICAL_THRESHOLD         10000
 
-AngleSensor::AngleSensor() {
+AngleSensor::AngleSensor(Storage& storage) {
     i2c_init(i2c1, I2C_SPEED);
     gpio_set_function(PINS_I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(PINS_I2C_SCL, GPIO_FUNC_I2C);
@@ -42,7 +40,7 @@ AngleSensor::AngleSensor() {
     i2c_write_blocking(i2c1, MPU6050, buffer, 2, false);
     sleep_ms(100);
 
-    calibrateGyro();
+    calibrateGyro(storage);
 
     readAccel();
     data.angle = std::atan2((float) accelY, (float) -accelX) * RADIANS_TO_DEGREES;
@@ -70,11 +68,11 @@ bool AngleSensor::isVertical() {
     return std::abs(accelZ) < VERTICAL_THRESHOLD;
 }
 
-void AngleSensor::calibrateGyro() {
-    float data = Storage::readAtIndex(0);
-    if (!std::isnan(data)) {
-        printf("Found gyro value: %f\n", data);
-        gyroOffset = data;
+void AngleSensor::calibrateGyro(Storage& storage) {
+    float storedOffset = storage.read(Storage::Slot::GYRO_OFFSET);
+    if (!std::isnan(storedOffset)) {
+        printf("Found gyro value: %f\n", storedOffset);
+        gyroOffset = storedOffset;
         return;
     }
 
@@ -87,7 +85,8 @@ void AngleSensor::calibrateGyro() {
     }
     gyroOffset = sum / CALIBRATION_SAMPLES;
 
-    Storage::writeAtIndex(gyroOffset, 0);
+    storage.write(Storage::Slot::GYRO_OFFSET, gyroOffset);
+    storage.save();
     printf("Written gyro value: %f\n", gyroOffset);
 }
 

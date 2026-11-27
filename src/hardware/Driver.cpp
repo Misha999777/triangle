@@ -16,11 +16,9 @@
 #define PWM_DIVIDER   16
 
 Driver::Driver() {
-    params = new RP2350DriverParams();
-
-    setupPWM(PINS_PWM_1, 0);
-    setupPWM(PINS_PWM_2, 1);
-    setupPWM(PINS_PWM_3, 2);
+    phases[0] = setupPWM(PINS_PWM_1);
+    phases[1] = setupPWM(PINS_PWM_2);
+    phases[2] = setupPWM(PINS_PWM_3);
 
     for (int i = 0; i < NUM_PWM_SLICES; i++) {
         pwm_set_enabled(i, false);
@@ -30,32 +28,30 @@ Driver::Driver() {
     pwm_set_mask_enabled(0xFF);
 }
 
-void Driver::writeDutyCycle(float dc_a, float dc_b, float dc_c) {
-    writeDutyCycle(dc_a, params->slice[0], params->chan[0], params->wrap[0] + 1);
-    writeDutyCycle(dc_b, params->slice[1], params->chan[1], params->wrap[1] + 1);
-    writeDutyCycle(dc_c, params->slice[2], params->chan[2], params->wrap[2] + 1);
+void Driver::writeDutyCycle(float dutyCycleA, float dutyCycleB, float dutyCycleC) {
+    writeDutyCycle(phases[0], dutyCycleA);
+    writeDutyCycle(phases[1], dutyCycleB);
+    writeDutyCycle(phases[2], dutyCycleC);
 }
 
-void Driver::setupPWM(int pin, int index) {
-    int div = PWM_DIVIDER;
-    int sysclock_hz = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS) * 1000;
-    int wrap = sysclock_hz / div * 8 / PWM_FREQUENCY - 1;
+Driver::Phase Driver::setupPWM(int pin) {
+    int divider = PWM_DIVIDER;
+    int systemClockHz = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS) * 1000;
+    int wrap = systemClockHz / divider * 8 / PWM_FREQUENCY - 1;
 
     gpio_set_function(pin, GPIO_FUNC_PWM);
 
     int slice = pwm_gpio_to_slice_num(pin);
-    int chan = pwm_gpio_to_channel(pin);
+    int channel = pwm_gpio_to_channel(pin);
 
-    pwm_set_clkdiv_int_frac(slice, div>>4, div&0xF);
+    pwm_set_clkdiv_int_frac(slice, divider >> 4, divider & 0xF);
     pwm_set_phase_correct(slice, true);
     pwm_set_wrap(slice, wrap);
-    pwm_set_chan_level(slice, chan, 0);
+    pwm_set_chan_level(slice, channel, 0);
 
-    params->wrap[index] = wrap;
-    params->slice[index] = slice;
-    params->chan[index] = chan;
+    return {slice, channel, wrap};
 }
 
-void Driver::writeDutyCycle(float val, int slice, int chan, int wrap) {
-    pwm_set_chan_level(slice, chan, wrap * val);
+void Driver::writeDutyCycle(const Phase& phase, float dutyCycle) {
+    pwm_set_chan_level(phase.slice, phase.channel, (phase.wrap + 1) * dutyCycle);
 }

@@ -17,11 +17,11 @@ private:
     float readAngle();
 
     critical_section_t lock;
-    uint64_t angle_prev_ts = 0;
-    uint64_t vel_angle_prev_ts = 0;
-    float angle_prev = 0;
-    float vel_angle_prev = 0;
-    int full_rotations = 0;
-    int vel_full_rotations = 0;
+    uint64_t previousAngleTime = 0;
+    uint64_t velocityPreviousTime = 0;
+    float previousAngle = 0;
+    float velocityPreviousAngle = 0;
+    int fullRotations = 0;
+    int velocityFullRotations = 0;
     float velocity = 0;
 };

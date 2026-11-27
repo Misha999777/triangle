@@ -6,36 +6,30 @@
 
 #include <cstring>
 
-#include "hardware/flash.h"
-#include "pico/flash.h"
+#include <pico/flash.h>
 
 #define FLASH_TARGET_OFFSET (1024 * 1024)
-const uint8_t* flash_target_contents = (const uint8_t*) (XIP_BASE + FLASH_TARGET_OFFSET);
 
-void Storage::writeAtIndex(float value, int index) {
-    float data[FLASH_PAGE_SIZE / 4] = {};
-    memcpy(data, flash_target_contents, FLASH_PAGE_SIZE);
-
-    data[index] = value;
-
-    flash_safe_execute(call_flash_range_erase, (void* ) FLASH_TARGET_OFFSET, UINT32_MAX);
-
-    uintptr_t params[] = {FLASH_TARGET_OFFSET, (uintptr_t) data};
-    flash_safe_execute(call_flash_range_program, params, UINT32_MAX);
+namespace {
+    void eraseAndProgram(void* data) {
+        flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
+        flash_range_program(FLASH_TARGET_OFFSET, (const uint8_t*) data, FLASH_PAGE_SIZE);
+    }
 }
 
-float Storage::readAtIndex(int index) {
-    float* floatContent = (float* ) flash_target_contents;
-    return floatContent[index];
+Storage::Storage() {
+    memcpy(values, (const void*) (XIP_BASE + FLASH_TARGET_OFFSET), sizeof(values));
 }
 
-void Storage::call_flash_range_erase(void* param) {
-    uint32_t offset = (uint32_t)param;
-    flash_range_erase(offset, FLASH_SECTOR_SIZE);
+float Storage::read(Slot slot, float fallback) {
+    float value = values[(int) slot];
+    return std::isnan(value) ? fallback : value;
 }
 
-void Storage::call_flash_range_program(void* param) {
-    uint32_t offset = ((uintptr_t *)param)[0];
-    uint8_t* data = (uint8_t *) ((uintptr_t*) param)[1];
-    flash_range_program(offset, data, FLASH_PAGE_SIZE);
+void Storage::write(Slot slot, float value) {
+    values[(int) slot] = value;
+}
+
+bool Storage::save() {
+    return flash_safe_execute(eraseAndProgram, values, UINT32_MAX) == PICO_OK;
 }

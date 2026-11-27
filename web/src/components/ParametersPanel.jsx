@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import useAction from '../hooks/useAction'
+import useBalancing from '../hooks/useBalancing'
+
 import {
   Button,
   Field,
@@ -10,7 +13,7 @@ import {
 } from '@fluentui/react-components'
 import { ArrowClockwiseRegular, CheckmarkRegular, SaveRegular } from '@fluentui/react-icons'
 
-import { errorMessage, onSamples, readParameters, saveParameters, writeParameters } from '../services/robot'
+import { readParameters, saveParameters, writeParameters } from '../services/robot'
 
 import styles from '../styles/ParametersPanel.module.css'
 
@@ -25,40 +28,22 @@ const format = value => String(Number(value.toPrecision(6)))
 const toFields = parameters => Object.fromEntries(PARAMETERS.map(({ name }) => [name, format(parameters[name])]))
 const isValid = value => value.trim() !== '' && Number.isFinite(Number(value))
 
-function useBalancing() {
-  const [balancing, setBalancing] = useState(false)
-  useEffect(() => onSamples(samples => setBalancing(samples.at(-1).balancing)), [])
-  return balancing
-}
-
 export default function ParametersPanel({ linkState }) {
-  const [device, setDevice] = useState(null)
+  const [robotValues, setRobotValues] = useState(null)
   const [values, setValues] = useState(null)
   const [unsaved, setUnsaved] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState(null)
+  const { busy, message, run } = useAction()
   const balancing = useBalancing()
 
   const isConnected = linkState === 'connected'
 
-  const run = useCallback(async (action, success) => {
-    setBusy(true)
-    setMessage(null)
-    try {
-      await action()
-      if (success) setMessage({ intent: 'success', text: success })
-    } catch (e) {
-      setMessage({ intent: 'error', text: errorMessage(e) })
-    } finally {
-      setBusy(false)
-    }
+  const refresh = useCallback(async () => {
+    const parameters = await readParameters()
+    setRobotValues(parameters)
+    setValues(toFields(parameters))
   }, [])
 
-  const load = useCallback(() => run(async () => {
-    const parameters = await readParameters()
-    setDevice(parameters)
-    setValues(toFields(parameters))
-  }), [run])
+  const load = useCallback(() => run(refresh), [run, refresh])
 
   useEffect(() => {
     if (isConnected) load()
@@ -69,8 +54,8 @@ export default function ParametersPanel({ linkState }) {
   }, [linkState])
 
   const invalid = values ? PARAMETERS.filter(({ name }) => !isValid(values[name])) : []
-  const changed = values && device
-    ? PARAMETERS.filter(({ name }) => isValid(values[name]) && Number(values[name]) !== Number(format(device[name])))
+  const changed = values && robotValues
+    ? PARAMETERS.filter(({ name }) => isValid(values[name]) && Number(values[name]) !== Number(format(robotValues[name])))
     : []
 
   const handleApply = event => {
@@ -78,9 +63,7 @@ export default function ParametersPanel({ linkState }) {
     run(async () => {
       // Only the edited fields: the robot adjusts the target angle itself while balancing.
       await writeParameters(Object.fromEntries(changed.map(({ name }) => [name, Number(values[name])])))
-      const parameters = await readParameters()
-      setDevice(parameters)
-      setValues(toFields(parameters))
+      await refresh()
       setUnsaved(true)
     }, 'Applied. Not saved to flash yet.')
   }

@@ -18,16 +18,19 @@ message Command {
   CommandType type = 1;
 }
 
-message TelemetryBatch {
+message TelemetrySample {
   uint32 sequence = 1;
   uint32 time_ms = 2;
-  repeated uint32 time_delta_ms = 3;
-  repeated float angle = 4;
-  repeated float angular_velocity = 5;
-  repeated float wheel_velocity = 6;
-  repeated float torque = 7;
-  repeated float target_angle = 8;
-  repeated bool balancing = 9;
+  float angle = 3;
+  float angular_velocity = 4;
+  float wheel_velocity = 5;
+  float torque = 6;
+  float target_angle = 7;
+  bool balancing = 8;
+}
+
+message TelemetryBatch {
+  repeated TelemetrySample samples = 1;
 }
 
 enum Error {

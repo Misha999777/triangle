@@ -4,20 +4,20 @@
 
 #pragma once
 
-typedef struct RP2350DriverParams {
-    int slice[3];
-    int chan[3];
-    int wrap[3];
-} RP2350DriverParams;
-
 class Driver {
 public:
     Driver();
-    void writeDutyCycle(float dc_a, float dc_b, float dc_c);
+    void writeDutyCycle(float dutyCycleA, float dutyCycleB, float dutyCycleC);
 
 private:
-    void setupPWM(int pin, int index);
-    void writeDutyCycle(float val, int slice, int chan, int wrap);
+    struct Phase {
+        int slice;
+        int channel;
+        int wrap;
+    };
 
-    RP2350DriverParams* params;
+    Phase setupPWM(int pin);
+    void writeDutyCycle(const Phase& phase, float dutyCycle);
+
+    Phase phases[3] = {};
 };

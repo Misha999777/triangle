@@ -12,6 +12,12 @@
   background: var(--colorNeutralBackground2);
 }
 
+.card {
+  border-radius: var(--borderRadiusLarge);
+  background: var(--colorNeutralBackground1);
+  box-shadow: var(--shadow4);
+}
+
 .content {
   flex: 1;
   min-height: 0;

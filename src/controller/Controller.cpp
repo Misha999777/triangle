@@ -4,11 +4,15 @@
 
 #include "Controller.h"
 
+#include <algorithm>
 #include <cmath>
 
-#include "Storage.h"
+#define DEFAULT_TARGET_ANGLE           92.5f
+#define DEFAULT_K1                     10.0f
+#define DEFAULT_K2                     0.3f
+#define DEFAULT_K3                     0.1f
 
-#define MAXIMUM_VOLTAGE                5
+#define MAXIMUM_VOLTAGE                5.0f
 
 #define ERROR_MAXIMUM_ANGLE_DIFFERENCE 15
 #define ERROR_RELEASE_TIMEOUT          50
@@ -17,21 +21,11 @@
 #define ANGLE_ADJUSTMENT_THRESHOLD     5
 #define ANGLE_ADJUSTMENT_STEP          0.025f
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#define max(a, b) ((a) > (b) ? (a) : (b))
-
-Controller::Controller() {
-    float k1_flash = Storage::readAtIndex(3);
-    if (!std::isnan(k1_flash)) k1 = k1_flash;
-
-    float k2_flash = Storage::readAtIndex(4);
-    if (!std::isnan(k2_flash)) k2 = k2_flash;
-
-    float k3_flash = Storage::readAtIndex(5);
-    if (!std::isnan(k3_flash)) k3 = k3_flash;
-
-    float targetAngle_flash = Storage::readAtIndex(6);
-    if (!std::isnan(targetAngle_flash)) targetAngle = targetAngle_flash;
+Controller::Controller(Storage& storage) : storage(storage) {
+    targetAngle = storage.read(Storage::Slot::TARGET_ANGLE, DEFAULT_TARGET_ANGLE);
+    k1 = storage.read(Storage::Slot::K1, DEFAULT_K1);
+    k2 = storage.read(Storage::Slot::K2, DEFAULT_K2);
+    k3 = storage.read(Storage::Slot::K3, DEFAULT_K3);
 }
 
 float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
@@ -42,25 +36,27 @@ float Controller::loop(float shaftVelocity, IMUData data, bool isVertical) {
     if (isRunning) {
         adjustTargetAngle(shaftVelocity);
 
-        return controller(error, angularVelocity, shaftVelocity);
+        return computeTorque(error, angularVelocity, shaftVelocity);
     }
 
     return 0;
 }
 
-Parameters Controller::getParameters() const {
-    return {k1, k2, k3, targetAngle};
+triangle_v1_Parameters Controller::getParameters() {
+    return {true, k1, true, k2, true, k3, true, targetAngle};
 }
 
-bool Controller::setParameters(const Parameters& parameters) {
-    if (!std::isfinite(parameters.k1) || !std::isfinite(parameters.k2) ||
-        !std::isfinite(parameters.k3) || !std::isfinite(parameters.targetAngle)) {
+bool Controller::setParameters(const triangle_v1_Parameters& parameters) {
+    if ((parameters.has_k1 && !std::isfinite(parameters.k1)) ||
+        (parameters.has_k2 && !std::isfinite(parameters.k2)) ||
+        (parameters.has_k3 && !std::isfinite(parameters.k3)) ||
+        (parameters.has_target_angle && !std::isfinite(parameters.target_angle))) {
         return false;
     }
-    k1 = parameters.k1;
-    k2 = parameters.k2;
-    k3 = parameters.k3;
-    targetAngle = parameters.targetAngle;
+    if (parameters.has_k1) k1 = parameters.k1;
+    if (parameters.has_k2) k2 = parameters.k2;
+    if (parameters.has_k3) k3 = parameters.k3;
+    if (parameters.has_target_angle) targetAngle = parameters.target_angle;
     return true;
 }
 
@@ -69,18 +65,18 @@ bool Controller::saveParameters() {
     if (isRunning) {
         return false;
     }
-    Storage::writeAtIndex(k1, 3);
-    Storage::writeAtIndex(k2, 4);
-    Storage::writeAtIndex(k3, 5);
-    Storage::writeAtIndex(targetAngle, 6);
-    return true;
+    storage.write(Storage::Slot::K1, k1);
+    storage.write(Storage::Slot::K2, k2);
+    storage.write(Storage::Slot::K3, k3);
+    storage.write(Storage::Slot::TARGET_ANGLE, targetAngle);
+    return storage.save();
 }
 
-bool Controller::isBalancing() const {
+bool Controller::isBalancing() {
     return isRunning;
 }
 
-float Controller::getTargetAngle() const {
+float Controller::getTargetAngle() {
     return targetAngle;
 }
 
@@ -89,8 +85,7 @@ bool Controller::shouldRun(float error, bool isVertical) {
     bool isFreeToRun = isVertical && isErrorSmallEnough;
 
     if (isFreeToRun) {
-        errorCounter++;
-        errorCounter = max(0, min(errorCounter, ERROR_RELEASE_TIMEOUT));
+        errorCounter = std::clamp(errorCounter + 1, 0, ERROR_RELEASE_TIMEOUT);
     } else {
         errorCounter = 0;
     }
@@ -116,8 +111,7 @@ void Controller::adjustTargetAngle(float shaftVelocity) {
     averageVelocityCounter = 0;
 }
 
-float Controller::controller(float angle, float velocity, float shaftVelocity) {
+float Controller::computeTorque(float angle, float velocity, float shaftVelocity) {
     float u = k1 * angle + k2 * velocity + k3 * shaftVelocity;
-    u = max(-MAXIMUM_VOLTAGE, min(u, MAXIMUM_VOLTAGE));
-    return u;
+    return std::clamp(u, -MAXIMUM_VOLTAGE, MAXIMUM_VOLTAGE);
 }

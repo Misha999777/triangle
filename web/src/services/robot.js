@@ -41,32 +41,21 @@ const toBytes = view => new Uint8Array(view.buffer, view.byteOffset, view.byteLe
 
 function handleTelemetry(event) {
   const batch = fromBinary(TelemetryBatchSchema, toBytes(event.target.value))
-  const count = batch.angle.length
-  if (telemetry.expectedSequence !== null) {
-    telemetry.dropped += Math.max(0, batch.sequence - telemetry.expectedSequence)
-  }
-  telemetry.expectedSequence = batch.sequence + count
-  telemetry.received += count
-
-  // The robot's millisecond clock is 32-bit and wraps after ~49 days, so add up unsigned differences.
-  if (telemetry.lastTimeMs !== null) {
-    telemetry.elapsedMs += (batch.timeMs - telemetry.lastTimeMs) >>> 0
-  }
-  telemetry.lastTimeMs = batch.timeMs
-
-  const samples = batch.angle.map((angle, i) => {
-    telemetry.elapsedMs += batch.timeDeltaMs[i]
-    telemetry.lastTimeMs = (telemetry.lastTimeMs + batch.timeDeltaMs[i]) >>> 0
-    return {
-      time: telemetry.elapsedMs / 1000,
-      angle,
-      angularVelocity: batch.angularVelocity[i],
-      wheelVelocity: batch.wheelVelocity[i],
-      torque: batch.torque[i],
-      target: batch.targetAngle[i],
-      balancing: batch.balancing[i],
+  const samples = batch.samples.map(sample => {
+    if (telemetry.expectedSequence !== null) {
+      telemetry.dropped += Math.max(0, sample.sequence - telemetry.expectedSequence)
     }
+    telemetry.expectedSequence = sample.sequence + 1
+
+    // The robot's millisecond clock is 32-bit and wraps after ~49 days, so add up unsigned differences.
+    if (telemetry.lastTimeMs !== null) {
+      telemetry.elapsedMs += (sample.timeMs - telemetry.lastTimeMs) >>> 0
+    }
+    telemetry.lastTimeMs = sample.timeMs
+
+    return { ...sample, time: telemetry.elapsedMs / 1000 }
   })
+  telemetry.received += samples.length
   emit('samples', samples)
 }
 

@@ -14,14 +14,14 @@ export default defineConfig({
         background_color: '#ffffff',
         icons: [
           {
-            src: "icon.svg",
-            type: "image/svg+xml",
+            src: 'icon.svg',
+            type: 'image/svg+xml',
             sizes: 'any',
             purpose: 'any',
           },
           {
-            src: "maskable.svg",
-            type: "image/svg+xml",
+            src: 'maskable.svg',
+            type: 'image/svg+xml',
             sizes: 'any',
             purpose: 'maskable',
           },

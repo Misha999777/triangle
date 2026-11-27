@@ -24,12 +24,12 @@ All characteristics belong to service `0000FF10-0000-1000-8000-00805F9B34FB`. Ea
 | Characteristic    | Access      | Message          | Notes                                                                                     |
 |-------------------|-------------|------------------|-------------------------------------------------------------------------------------------|
 | `FF11` Parameters | Read, Write | `Parameters`     | Reads return all fields. Writes may contain any subset; only the fields present change.   |
-| `FF12` Telemetry  | Notify      | `TelemetryBatch` | Consecutive samples stored column by column, with the sequence number of the first one.   |
+| `FF12` Telemetry  | Notify      | `TelemetryBatch` | Consecutive `TelemetrySample`s, each with its own sequence number and timestamp.          |
 | `FF13` Command    | Write       | `Command`        | A `CommandType`; currently only `SAVE_PARAMETERS`, rejected while balancing.             |
 
 Rejected writes return an ATT error code from the `Error` enum.
 
-The control loop writes samples into a 2.5-second ring buffer, and the BLE stack drains it every 25 ms, packing as many samples into each notification as the connection's MTU allows (about 10 at the usual MTU of 247). If the link can't keep up, new samples are dropped rather than blocking the control loop; the gap shows up in the sequence numbers. A batch needs more than the minimum BLE MTU of 23 bytes, so the stream requires a client that negotiates a larger MTU, as desktop and Android browsers normally do.
+The control loop writes samples into a 2.5-second ring buffer, and the BLE stack drains it every 25 ms, packing as many samples into each notification as the connection's MTU allows (about 6 at the usual MTU of 247). If the link can't keep up, new samples are dropped rather than blocking the control loop; the gap shows up in the sequence numbers. A batch needs more than the minimum BLE MTU of 23 bytes, so the stream requires a client that negotiates a larger MTU, as desktop and Android browsers normally do.
 
 ### Changing the protocol
 

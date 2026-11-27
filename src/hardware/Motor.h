@@ -6,22 +6,23 @@
 
 #include "MotorSensor.h"
 #include "Driver.h"
+#include "../controller/Storage.h"
 
 class Motor {
 public:
-    Motor(MotorSensor* sensor);
+    Motor(MotorSensor& motorSensor, Storage& storage);
     void loop();
     void setTorque(float newTorque);
 
 private:
-    void calibrate();
+    void calibrate(Storage& storage);
     float electricalAngle();
-    void setPhaseVoltage(float Uq, float angle_el);
+    void setPhaseVoltage(float voltage, float angle);
 
-    Driver* driver = nullptr;
-    MotorSensor* motorSensor = nullptr;
+    MotorSensor& motorSensor;
+    Driver* driver = new Driver();
 
-    float zero_electric_angle = 0;
-    int sensor_direction = 1;
+    float zeroElectricAngle = 0;
+    int sensorDirection = 1;
     float torque = 0;
 };
