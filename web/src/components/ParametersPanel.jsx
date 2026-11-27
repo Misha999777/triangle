@@ -3,14 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import useAction from '../hooks/useAction'
 import useBalancing from '../hooks/useBalancing'
 
-import {
-  Button,
-  Field,
-  Input,
-  MessageBar,
-  MessageBarBody,
-  Text,
-} from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
 import { ArrowClockwiseRegular, CheckmarkRegular, SaveRegular } from '@fluentui/react-icons'
 
 import { readParameters, saveParameters, writeParameters } from '../services/robot'
@@ -46,22 +39,26 @@ export default function ParametersPanel({ linkState }) {
   const load = useCallback(() => run(refresh), [run, refresh])
 
   useEffect(() => {
-    if (isConnected) load()
+    if (isConnected) {
+      load()
+    }
   }, [isConnected, load])
 
   useEffect(() => {
-    if (linkState === 'connecting') setUnsaved(false)
+    if (linkState === 'connecting') {
+      setUnsaved(false)
+    }
   }, [linkState])
 
   const invalid = values ? PARAMETERS.filter(({ name }) => !isValid(values[name])) : []
-  const changed = values && robotValues
+  const changed = values
     ? PARAMETERS.filter(({ name }) => isValid(values[name]) && Number(values[name]) !== Number(format(robotValues[name])))
     : []
 
   const handleApply = event => {
     event.preventDefault()
     run(async () => {
-      // Only the edited fields: the robot adjusts the target angle itself while balancing.
+      // Only edited fields: the robot adjusts the target angle while balancing.
       await writeParameters(Object.fromEntries(changed.map(({ name }) => [name, Number(values[name])])))
       await refresh()
       setUnsaved(true)

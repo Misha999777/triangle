@@ -2,11 +2,15 @@
   composes: card from './App.module.css';
   width: 300px;
   flex-shrink: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.panel,
+.form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
-  overflow-y: auto;
 }
 
 .header {
@@ -17,12 +21,6 @@
 
 .note {
   color: var(--colorNeutralForeground3);
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .actions {

@@ -2,17 +2,16 @@ import { useState, useEffect } from 'react'
 
 import { webLightTheme, webDarkTheme } from '@fluentui/react-components'
 
-const query = '(prefers-color-scheme: dark)'
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
 export default function useSystemTheme() {
-  const [isDark, setIsDark] = useState(() => window.matchMedia(query).matches)
+  const [isDark, setIsDark] = useState(darkQuery.matches)
 
   useEffect(() => {
-    const mq = window.matchMedia(query)
     const handleChange = e => setIsDark(e.matches)
-    mq.addEventListener('change', handleChange)
+    darkQuery.addEventListener('change', handleChange)
 
-    return () => mq.removeEventListener('change', handleChange)
+    return () => darkQuery.removeEventListener('change', handleChange)
   }, [])
 
   return { theme: isDark ? webDarkTheme : webLightTheme, isDark }

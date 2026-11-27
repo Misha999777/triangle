@@ -11,7 +11,9 @@ export default function useAction() {
     setMessage(null)
     try {
       await action()
-      if (success) setMessage({ intent: 'success', text: success })
+      if (success) {
+        setMessage({ intent: 'success', text: success })
+      }
     } catch (e) {
       setMessage({ intent: 'error', text: errorMessage(e) })
     } finally {

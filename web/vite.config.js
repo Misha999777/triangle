@@ -11,20 +11,9 @@ export default defineConfig({
         name: 'Triangle',
         short_name: 'Triangle',
         theme_color: '#212121',
-        background_color: '#ffffff',
         icons: [
-          {
-            src: 'icon.svg',
-            type: 'image/svg+xml',
-            sizes: 'any',
-            purpose: 'any',
-          },
-          {
-            src: 'maskable.svg',
-            type: 'image/svg+xml',
-            sizes: 'any',
-            purpose: 'maskable',
-          },
+          { src: 'icon.svg', sizes: 'any' },
+          { src: 'maskable.svg', sizes: 'any', purpose: 'maskable' },
         ],
       },
     }),

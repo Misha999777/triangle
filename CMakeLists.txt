@@ -8,23 +8,20 @@ pico_sdk_init()
 
 add_subdirectory(proto)
 
-file(GLOB_RECURSE SOURCES 
-    "src/*.cpp" 
-    "src/*.hpp"
-)
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(triangle ${SOURCES})
 
 target_link_libraries(triangle
-        protocol
-        pico_cyw43_arch_none
-        pico_stdlib
-        pico_multicore
-        pico_btstack_cyw43
-        pico_btstack_ble
-        hardware_spi
-        hardware_i2c
-        hardware_pwm
-        hardware_adc
+    protocol
+    pico_cyw43_arch_none
+    pico_stdlib
+    pico_multicore
+    pico_btstack_cyw43
+    pico_btstack_ble
+    hardware_spi
+    hardware_i2c
+    hardware_pwm
+    hardware_adc
 )
 
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src/bluetooth/config")

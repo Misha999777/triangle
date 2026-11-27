@@ -10,9 +10,7 @@ import styles from '../styles/TelemetryPanel.module.css'
 const WINDOW_SECONDS = 30
 const READOUT_INTERVAL_MS = 100
 const Y_AXIS_WIDTH = 56
-const DEFAULT_SELECTION = ['angle', 'targetAngle']
 
-// Categorical palette slots validated for colour-blind separation on the light and dark surfaces.
 const COLORS = {
   light: ['#2a78d6', '#eb6834', '#1baf7a'],
   dark: ['#3987e5', '#d95926', '#199e70'],
@@ -38,12 +36,16 @@ const emptyData = () => Object.fromEntries(['time', 'balancing', ...SIGNALS.map(
 function append(data, samples) {
   for (const sample of samples) {
     const values = { ...sample, error: sample.angle - sample.targetAngle, wheelVelocity: sample.wheelVelocity * 180 / Math.PI }
-    for (const key of Object.keys(data)) data[key].push(values[key])
+    for (const key of Object.keys(data)) {
+      data[key].push(values[key])
+    }
   }
 
   const firstKept = data.time.findIndex(t => t >= data.time.at(-1) - WINDOW_SECONDS)
   if (firstKept > 0) {
-    for (const values of Object.values(data)) values.splice(0, firstKept)
+    for (const values of Object.values(data)) {
+      values.splice(0, firstKept)
+    }
   }
 }
 
@@ -55,23 +57,30 @@ export default function TelemetryPanel({ theme, isDark, linkState }) {
   const readoutTimeRef = useRef(0)
   const [, refresh] = useReducer(n => n + 1, 0)
   const [stats, setStats] = useState(null)
-  const [selection, setSelection] = useState(DEFAULT_SELECTION)
+  const [selection, setSelection] = useState(['angle', 'targetAngle'])
 
   const colors = isDark ? COLORS.dark : COLORS.light
   const charts = CHARTS
     .map(chart => ({ ...chart, series: SIGNALS.filter(s => s.chart === chart.id && selection.includes(s.key)) }))
     .filter(chart => chart.series.length > 0)
 
+  const redraw = () => {
+    for (const { plot, toData } of plotsRef.current) {
+      plot.setData(toData(dataRef.current))
+    }
+  }
+
   useEffect(() => onStats(setStats), [])
 
   useEffect(() => {
     const font = `12px ${theme.fontFamilyBase}`
+    const line = { stroke: theme.colorNeutralStroke2, width: 1 }
     const axis = {
       stroke: theme.colorNeutralForeground2,
       font,
       labelFont: font,
-      grid: { stroke: theme.colorNeutralStroke2, width: 1 },
-      ticks: { stroke: theme.colorNeutralStroke2, width: 1 },
+      grid: line,
+      ticks: line,
     }
 
     const plots = charts.map(({ id, series }, i) => {
@@ -118,7 +127,7 @@ export default function TelemetryPanel({ theme, isDark, linkState }) {
   useEffect(() => {
     if (linkState === 'connecting') {
       dataRef.current = emptyData()
-      for (const { plot, toData } of plotsRef.current) plot.setData(toData(dataRef.current))
+      redraw()
       refresh()
     }
   }, [linkState])
@@ -126,11 +135,13 @@ export default function TelemetryPanel({ theme, isDark, linkState }) {
   useEffect(() => {
     const unsubscribe = onSamples(samples => {
       append(dataRef.current, samples)
-      if (frameRef.current) return
+      if (frameRef.current) {
+        return
+      }
 
       frameRef.current = requestAnimationFrame(() => {
         frameRef.current = 0
-        for (const { plot, toData } of plotsRef.current) plot.setData(toData(dataRef.current))
+        redraw()
         const now = performance.now()
         if (now - readoutTimeRef.current >= READOUT_INTERVAL_MS) {
           readoutTimeRef.current = now

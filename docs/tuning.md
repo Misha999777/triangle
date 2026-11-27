@@ -25,7 +25,7 @@ All characteristics belong to service `0000FF10-0000-1000-8000-00805F9B34FB`. Ea
 |-------------------|-------------|------------------|-------------------------------------------------------------------------------------------|
 | `FF11` Parameters | Read, Write | `Parameters`     | Reads return all fields. Writes may contain any subset; only the fields present change.   |
 | `FF12` Telemetry  | Notify      | `TelemetryBatch` | Consecutive `TelemetrySample`s, each with its own sequence number and timestamp.          |
-| `FF13` Command    | Write       | `Command`        | A `CommandType`; currently only `SAVE_PARAMETERS`, rejected while balancing.             |
+| `FF13` Command    | Write       | `Command`        | A `CommandType`; currently only `SAVE_PARAMETERS`, rejected while balancing.              |
 
 Rejected writes return an ATT error code from the `Error` enum.
 

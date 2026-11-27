@@ -20,7 +20,7 @@ const result = spawnSync('protoc', [
 ], { stdio: 'inherit' })
 
 if (result.error?.code === 'ENOENT') {
-  console.error('protoc was not found')
+  console.error('protoc not found')
   process.exit(1)
 }
 process.exit(result.status ?? 1)

@@ -1,11 +1,4 @@
-import {
-  Badge,
-  Button,
-  MessageBar,
-  MessageBarBody,
-  Spinner,
-  Text,
-} from '@fluentui/react-components'
+import { Badge, Button, MessageBar, MessageBarBody, Spinner, Text } from '@fluentui/react-components'
 import { PlugConnectedRegular, PlugDisconnectedRegular } from '@fluentui/react-icons'
 
 import useAction from '../hooks/useAction'
@@ -25,7 +18,7 @@ export default function ConnectionBar({ linkState }) {
 
   const supported = isSupported()
   const isLinked = linkState !== 'disconnected'
-  const badge = STATE_BADGES[linkState] ?? STATE_BADGES.disconnected
+  const badge = STATE_BADGES[linkState]
 
   return (
     <>
@@ -40,7 +33,12 @@ export default function ConnectionBar({ linkState }) {
             </Button>
           </>
         ) : (
-          <Button appearance="primary" icon={<PlugConnectedRegular />} onClick={() => run(connect)} disabled={busy || !supported}>
+          <Button
+            appearance="primary"
+            icon={<PlugConnectedRegular />}
+            onClick={() => run(connect)}
+            disabled={busy || !supported}
+          >
             Connect…
           </Button>
         )}
@@ -54,7 +52,7 @@ export default function ConnectionBar({ linkState }) {
       {!supported && (
         <MessageBar intent="warning" className={styles.error}>
           <MessageBarBody>
-            This browser doesn't support Web Bluetooth. Open this page in Chrome or Edge on desktop or Android.
+            This browser doesn't support Web Bluetooth. Use Chrome or Edge on desktop or Android.
           </MessageBarBody>
         </MessageBar>
       )}

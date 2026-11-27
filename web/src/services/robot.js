@@ -2,11 +2,11 @@ import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 
 import { CommandSchema, CommandType, ParametersSchema, TelemetryBatchSchema } from '../gen/triangle_pb.js'
 
-// Must match src/bluetooth/config/ble_config.gatt in the firmware.
-const SERVICE_UUID = '0000ff10-0000-1000-8000-00805f9b34fb'
-const PARAMETERS_UUID = '0000ff11-0000-1000-8000-00805f9b34fb'
-const TELEMETRY_UUID = '0000ff12-0000-1000-8000-00805f9b34fb'
-const COMMAND_UUID = '0000ff13-0000-1000-8000-00805f9b34fb'
+// Must match the firmware's ble_config.gatt.
+const SERVICE_UUID = 0xff10
+const PARAMETERS_UUID = 0xff11
+const TELEMETRY_UUID = 0xff12
+const COMMAND_UUID = 0xff13
 
 const MAX_RECONNECT_DELAY_MS = 5000
 
@@ -32,22 +32,22 @@ function emit(kind, value) {
 }
 
 function setState(next) {
-  if (state === next) return
-  state = next
-  emit('state', state)
+  if (state !== next) {
+    state = next
+    emit('state', state)
+  }
 }
 
 const toBytes = view => new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
 
 function handleTelemetry(event) {
-  const batch = fromBinary(TelemetryBatchSchema, toBytes(event.target.value))
-  const samples = batch.samples.map(sample => {
+  const samples = fromBinary(TelemetryBatchSchema, toBytes(event.target.value)).samples.map(sample => {
     if (telemetry.expectedSequence !== null) {
       telemetry.dropped += Math.max(0, sample.sequence - telemetry.expectedSequence)
     }
     telemetry.expectedSequence = sample.sequence + 1
 
-    // The robot's millisecond clock is 32-bit and wraps after ~49 days, so add up unsigned differences.
+    // The robot's ms clock is 32-bit and wraps after ~49 days, so sum unsigned differences.
     if (telemetry.lastTimeMs !== null) {
       telemetry.elapsedMs += (sample.timeMs - telemetry.lastTimeMs) >>> 0
     }
@@ -57,20 +57,6 @@ function handleTelemetry(event) {
   })
   telemetry.received += samples.length
   emit('samples', samples)
-}
-
-function startStats() {
-  clearInterval(statsTimer)
-  let lastReceived = telemetry.received
-  statsTimer = setInterval(() => {
-    emit('stats', { rate: telemetry.received - lastReceived, dropped: telemetry.dropped })
-    lastReceived = telemetry.received
-  }, 1000)
-}
-
-function stopStats() {
-  clearInterval(statsTimer)
-  emit('stats', null)
 }
 
 async function openLink(target) {
@@ -90,7 +76,9 @@ async function openLink(target) {
 
 async function handleDisconnected() {
   characteristics = null
-  if (state === 'disconnected' || reconnectingSession === session) return
+  if (state === 'disconnected' || reconnectingSession === session) {
+    return
+  }
 
   const current = session
   reconnectingSession = current
@@ -109,7 +97,9 @@ async function handleDisconnected() {
       await new Promise(resolve => setTimeout(resolve, Math.min(attempt * 1000, MAX_RECONNECT_DELAY_MS)))
     }
   }
-  if (reconnectingSession === current) reconnectingSession = null
+  if (reconnectingSession === current) {
+    reconnectingSession = null
+  }
 }
 
 function enqueue(operation) {
@@ -138,7 +128,7 @@ export const onSamples = listener => subscribe('samples', listener)
 export const onState = listener => subscribe('state', listener)
 export const onStats = listener => subscribe('stats', listener)
 export const getState = () => state
-export const deviceName = () => device?.name ?? null
+export const deviceName = () => device?.name
 export const isSupported = () => 'bluetooth' in navigator
 
 export async function connect() {
@@ -146,7 +136,9 @@ export async function connect() {
   try {
     picked = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE_UUID] }] })
   } catch (e) {
-    if (e?.name === 'NotFoundError') return false
+    if (e?.name === 'NotFoundError') {
+      return
+    }
     throw e
   }
 
@@ -160,22 +152,31 @@ export async function connect() {
   try {
     await openLink(picked)
   } catch (e) {
-    if (session !== current) return false
+    if (session !== current) {
+      return
+    }
     setState('disconnected')
     picked.gatt.disconnect()
     throw `Connection failed: ${errorMessage(e)}.`
   }
-  if (session !== current) return false
+  if (session !== current) {
+    return
+  }
 
-  startStats()
+  clearInterval(statsTimer)
+  let lastReceived = telemetry.received
+  statsTimer = setInterval(() => {
+    emit('stats', { rate: telemetry.received - lastReceived, dropped: telemetry.dropped })
+    lastReceived = telemetry.received
+  }, 1000)
   setState('connected')
-  return true
 }
 
 export async function disconnect() {
   session++
   characteristics = null
-  stopStats()
+  clearInterval(statsTimer)
+  emit('stats', null)
   setState('disconnected')
   device?.gatt.disconnect()
 }
@@ -186,17 +187,16 @@ export function readParameters() {
 
 export function writeParameters(values) {
   const bytes = toBinary(ParametersSchema, create(ParametersSchema, values))
-  return write('parameters', bytes, e => `The robot rejected the values (${errorMessage(e)})`)
+  return write('parameters', bytes, e => `Values rejected: ${errorMessage(e)}`)
 }
 
 export function saveParameters() {
   const bytes = toBinary(CommandSchema, create(CommandSchema, { type: CommandType.SAVE_PARAMETERS }))
-  // The browser doesn't expose the ATT error code; the only reason the firmware refuses is balancing.
-  return write('command', bytes, () => "The robot rejected the save. It can't save while it is balancing. Lay it down and try again.")
+  return write('command', bytes, () => "Can't save while balancing")
 }
 
 export function errorMessage(error) {
-  return typeof error === 'string' ? error : error?.message ?? String(error)
+  return error?.message ?? String(error)
 }
 
 if (import.meta.hot) {

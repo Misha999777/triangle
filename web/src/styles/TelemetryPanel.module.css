@@ -62,20 +62,17 @@
   border-top-style: dashed;
 }
 
-.charts {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+.charts,
 .chartBlock {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.charts {
+  position: relative;
+  gap: 8px;
 }
 
 .plot {
